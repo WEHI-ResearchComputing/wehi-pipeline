@@ -5,6 +5,8 @@
 <pydev_pathproperty name="org.python.pydev.PROJECT_EXTERNAL_SOURCE_PATH">
 <path>/Users/thomas.e/wehi-workspace/pipeline_base/pipeline_base</path>
 <path>/Users/thomas.e/wehi-workspace/pipeline_base</path>
-<path>/Volumes/thomas.e/wehi-pipeline/src</path>
+</pydev_pathproperty>
+<pydev_pathproperty name="org.python.pydev.PROJECT_SOURCE_PATH">
+<path>/${PROJECT_DIR_NAME}/src</path>
 </pydev_pathproperty>
 </pydev_project>

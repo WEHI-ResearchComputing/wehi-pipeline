@@ -20,7 +20,9 @@ DEFAULT_JOBSCRIPT_DIR = 'jobscripts'
 
 
 def parse_command_line(version):
+    
     '''Parse the command line arguments of the pipeline'''
+    
     parser = cmdline.get_argparse(description='Variant calling pipeline',
         ignored_args = ["version"] )
     
@@ -36,8 +38,6 @@ def parse_command_line(version):
     parser.add_argument('--version', action='version',
         version='%(prog)s ' + version)
     
-    parser.add_argument('--describe', action='describe')
-    
     return parser.parse_args()
 
 
@@ -48,30 +48,29 @@ def main(program_name, program_version, make_pipeline):
     # Parse command line arguments
     options = parse_command_line(program_version)
     
-    if options.describe:
-        describe(make_pipeline)
-        return;
-    
     # Initialise the logger
     logger = Logger(__name__, options.log_file, options.verbose)
     # Log the command line used to run the pipeline
     logger.info(' '.join(sys.argv))
+    
     # Parse the configuration file, and initialise global state
     config = Config(options.config)
     config.validate()
             
     state = State(options=options, config=config, logger=logger,
-                  drmaa_session=drmaa_session(config))
+                  drmaa_session=drmaa_session(program_name, config))
     
     # Build the pipeline workflow
-    pipeline = make_pipeline(state)
+    make_pipeline(state)
+    
     # Run (or print) the pipeline
     cmdline.run(options)
+    
     if drmaa_session is not None:
         # Shut down the DRMAA session
         drmaa_session.exit()
 
-def drmaa_session(config):
+def drmaa_session(program_name, config):
     drmaa_session = None
     if not config.isLocal():
         try:
@@ -84,6 +83,3 @@ def drmaa_session(config):
             print("Error message: {msg}".format(msg=e.message, file=sys.stdout))
             exit(error_codes.DRMAA_ERROR)
             
-def describe(make_pipeline):
-    print('hello')
-    
