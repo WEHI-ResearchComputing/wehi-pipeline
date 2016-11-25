@@ -13,12 +13,13 @@ import logging
 
 from wehi_pipeline.toil_support.jobStep import childrenOf
 from wehi_pipeline.toil_support.jobStep import followersOf
+from wehi_pipeline.toil_support.logger import StreamLogger
 
 def commitFile(job, fn, desc):
     # Seems global name is obfuscated by design
     # Don't attempt to resolve it as that can potentially
     # trigger to create a local copy
-    fID = job.fileStore.writeGlobalFile(fn, cleanup=True)
+    fID = job.fileStore.writeGlobalFile(fn, cleanup=False)
     statinfo = os.stat(fn)
     sz = str(statinfo.st_size)
     logging.info('Committing local description="%s", name=%s, size=%s, id=%s' % (desc, fn, sz, str(fID)))
@@ -68,20 +69,28 @@ def osExecutor(cmd, outfn=None):
                           stdout=subprocess.PIPE, 
                           stderr=subprocess.PIPE
                           )
-    
+        stdoutLogger = StreamLogger(logging.INFO)
+        stdoutLogger.redirect('child stdout', sp.stdout)
     else:
+        stdoutLogger = None
         outfn = open(outfn, 'wb')
         sp = subprocess.Popen(cmd, 
                           stdout=outfn, 
                           stderr=subprocess.PIPE
                           )
     
+    stderrLogger = StreamLogger(logging.WARN if outfn is None else logging.INFO)
+    stderrLogger.redirect('child stderr', sp.stderr)
 
     sp.wait()
     rc = sp.returncode
+    
+    if stdoutLogger is not None:
+        stdoutLogger.shutdown()
+    stderrLogger.shutdown()
 
     if rc:
-        raise Exception(cmd + '\ncompleted abnormally: rc=' + str(rc))
+        raise Exception(' '.join(cmd) + '\ncompleted abnormally: rc=' + str(rc))
  
 def launchNext(job, step, context):
     
