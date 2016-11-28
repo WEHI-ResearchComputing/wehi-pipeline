@@ -15,6 +15,15 @@ from wehi_pipeline.toil_support.jobStep import childrenOf
 from wehi_pipeline.toil_support.jobStep import followersOf
 from wehi_pipeline.toil_support.logger import StreamLogger
 
+def makedir(wdir):
+    if os.path.isdir(wdir): 
+        return
+    
+    if os.path.isfile(wdir):
+        raise Exception(wdir + ' already exists as a file')
+    
+    os.makedirs(wdir)
+ 
 def commitFile(job, fn, desc):
     # Seems global name is obfuscated by design
     # Don't attempt to resolve it as that can potentially
@@ -57,40 +66,56 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
         
-def osExecutor(cmd, outfn=None):
-    if type(cmd) is not list:
-        cmd = cmd.split()
+def osExecutor(cmds, outfn=None, infn=None):
+    '''
+    Execute a one or more commands in a pipe
+    '''
         
-    logging.info('Executing: ' + ' '.join(cmd))
-    
-    if outfn is None:
-        sp = subprocess.Popen(cmd, 
-                          bufsize=1,
-                          stdout=subprocess.PIPE, 
-                          stderr=subprocess.PIPE
-                          )
-        stdoutLogger = StreamLogger(logging.INFO)
-        stdoutLogger.redirect('child stdout', sp.stdout)
-    else:
-        stdoutLogger = None
-        outfn = open(outfn, 'wb')
-        sp = subprocess.Popen(cmd, 
-                          stdout=outfn, 
-                          stderr=subprocess.PIPE
-                          )
-    
-    stderrLogger = StreamLogger(logging.WARN if outfn is None else logging.INFO)
-    stderrLogger.redirect('child stderr', sp.stderr)
+    if type(cmds) is not list:
+        cmds = [cmds]
 
+    loggers = []
+    inStream = infn
+
+    for cmd in cmds:
+        logging.info('Executing: ' + cmd)
+        
+        last = cmd == cmd[-1]
+        
+        if last and outfn is None:
+            bufsize = 1
+        else:
+            bufsize = 0
+            outStream = subprocess.PIPE
+            
+        cmdBits = cmd.split()
+        cmdName = cmdBits[0]
+        sp = subprocess.Popen(cmdBits, 
+                          bufsize=bufsize,
+                          stdout=outStream, 
+                          stderr=subprocess.PIPE,
+                          stdin=inStream
+                          )
+        
+        logger = StreamLogger(logging.WARN if outfn is None else logging.INFO, cmdName)
+        logger.redirect('child [%s] stderr' % cmdName, sp.stderr)
+        loggers.append(logger)
+        
+        if last and outfn is None:
+            logger = StreamLogger(logging.INFO, cmdName)
+            logger.redirect('child [%s] stdout' % cmdName, sp.stdout)
+            loggers.append()
+            
+        inStream = sp.stdout
+        
     sp.wait()
     rc = sp.returncode
     
-    if stdoutLogger is not None:
-        stdoutLogger.shutdown()
-    stderrLogger.shutdown()
+    for logger in loggers:
+        logger.shutdown()
 
     if rc:
-        raise Exception(' '.join(cmd) + '\ncompleted abnormally: rc=' + str(rc))
+        raise Exception(cmd + '\ncompleted abnormally: rc=' + str(rc))
  
 def launchNext(job, step, context):
     
