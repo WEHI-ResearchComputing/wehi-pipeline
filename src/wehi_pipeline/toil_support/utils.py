@@ -66,24 +66,33 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
         
-def osExecutor(cmds, outfn=None, infn=None):
+def osExecutor(cmds, outfh=None, infh=None):
     '''
     Execute a one or more commands in a pipe
     '''
         
     if type(cmds) is not list:
         cmds = [cmds]
+    ncmds = len(cmds)
 
     loggers = []
-    inStream = infn
+    processes = []
+    inStream = infh
 
-    for cmd in cmds:
+    for i in range(ncmds):
+        cmd = cmds[i]
+        
         logging.info('Executing: ' + cmd)
         
-        last = cmd == cmd[-1]
+        last = i == (ncmds-1)
         
-        if last and outfn is None:
-            bufsize = 1
+        if last:
+            if outfh is None:
+                outStream = subprocess.PIPE
+                bufsize = 1
+            else:
+                outStream = outfh
+                bufsize = 0
         else:
             bufsize = 0
             outStream = subprocess.PIPE
@@ -96,26 +105,33 @@ def osExecutor(cmds, outfn=None, infn=None):
                           stderr=subprocess.PIPE,
                           stdin=inStream
                           )
+        sp.cmdName = cmdName
         
-        logger = StreamLogger(logging.WARN if outfn is None else logging.INFO, cmdName)
+        processes.append(sp)
+        logger = StreamLogger(logging.WARN if outfh is None else logging.INFO, cmdName)
         logger.redirect('child [%s] stderr' % cmdName, sp.stderr)
         loggers.append(logger)
         
-        if last and outfn is None:
+        if last and outfh is None:
             logger = StreamLogger(logging.INFO, cmdName)
             logger.redirect('child [%s] stdout' % cmdName, sp.stdout)
             loggers.append()
             
         inStream = sp.stdout
-        
-    sp.wait()
-    rc = sp.returncode
+
+    badRc = None
+    for sp in processes:
+        sp.wait()
+        rc = sp.returncode
+        if rc:
+            badRc = rc
+            badCmd = sp.cmdName
     
     for logger in loggers:
         logger.shutdown()
-
-    if rc:
-        raise Exception(cmd + '\ncompleted abnormally: rc=' + str(rc))
+        
+    if badRc:
+        raise Exception(badCmd + '\ncompleted abnormally: rc=' + str(rc))
  
 def launchNext(job, step, context):
     

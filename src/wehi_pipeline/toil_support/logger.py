@@ -22,10 +22,11 @@ class StreamLogger:
         def flush(self):
             self.logger.flush()
     
-    def __init__(self, level):
+    def __init__(self, level, desc):
         self.level = level
         
-        now = '======>>>>>>> Log opened at: {:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+        msg = '======>>>>>>> Log for ' + desc + ' opened at: {:%Y-%m-%d %H:%M:%S}'
+        now = msg.format(datetime.datetime.now())
         self._emit(now)
         
         self.ioLock = threading.Lock()
