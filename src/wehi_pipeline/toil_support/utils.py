@@ -5,7 +5,9 @@ Created on 21Nov.,2016
 '''
 
 import subprocess
+import resource
 import os
+import time
 import argparse
 
 from toil.job import Job
@@ -71,6 +73,9 @@ def osExecutor(cmds, outfh=None, infh=None):
     Execute a one or more commands in a pipe
     '''
         
+    startR = resource.getrusage(resource.RUSAGE_CHILDREN)
+    startT = time.time()
+    
     if type(cmds) is not list:
         cmds = [cmds]
     ncmds = len(cmds)
@@ -115,23 +120,57 @@ def osExecutor(cmds, outfh=None, infh=None):
         if last and outfh is None:
             logger = StreamLogger(logging.INFO, cmdName)
             logger.redirect('child [%s] stdout' % cmdName, sp.stdout)
-            loggers.append()
+            loggers.append(logger)
             
         inStream = sp.stdout
 
-    badRc = None
-    for sp in processes:
-        sp.wait()
-        rc = sp.returncode
-        if rc:
-            badRc = rc
-            badCmd = sp.cmdName
+    (badRc, badCmd) = _pollChildren(processes)
     
     for logger in loggers:
         logger.shutdown()
         
+    _reportUsage(startR, startT)
+    
     if badRc:
-        raise Exception(badCmd + '\ncompleted abnormally: rc=' + str(rc))
+        raise Exception(badCmd + '\ncompleted abnormally: rc=' + str(badRc))
+ 
+def _pollChildren(processes):
+    while len(processes) > 0:
+        for process in processes[:]:
+            time.sleep(10)
+            rc = process.poll()
+            if rc is not None:
+                if rc:
+                    # A process has failed
+                    return (rc, process.cmdName)
+                else:
+                    # completed successfully
+                    processes.remove(process)
+    # all good    
+    return (0, None)
+        
+def _reportUsage(startR, startT):
+    msg = '%-25s (%-10s) = %s'
+    
+    endR = resource.getrusage(resource.RUSAGE_CHILDREN)
+    endT = time.time()
+    
+    logging.info('-'*32 + ' Resource Usage ' + '-'*32)
+
+    for name, desc in [
+    ('ru_utime',   'User time'),
+    ('ru_stime',   'System time'),
+    ('ru_maxrss',  'Max. Resident Set Size'),
+    ('ru_ixrss',   'Shared Memory Size'),
+    ('ru_idrss',   'Unshared Memory Size'),
+    ('ru_isrss',   'Stack Size'),
+    ('ru_inblock', 'Block inputs'),
+    ('ru_oublock', 'Block outputs'),
+    ]:
+        logging.info(msg % (desc, name, getattr(endR, name)-getattr(startR, name)))
+        
+    logging.info(msg % ('Elapsed time', '', endT-startT))
+    logging.info('-'*80)
  
 def launchNext(job, step, context):
     
