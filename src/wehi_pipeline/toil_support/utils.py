@@ -33,7 +33,8 @@ def commitFile(job, fn, desc):
     fID = job.fileStore.writeGlobalFile(fn, cleanup=False)
     statinfo = os.stat(fn)
     sz = str(statinfo.st_size)
-    logging.info('Committing local description="%s", name=%s, size=%s, id=%s' % (desc, fn, sz, str(fID)))
+    inode = str(statinfo.st_ino)
+    logging.info('Committing local description="%s", name=%s, size=%s, inode=%s toilId=%s' % (desc, fn, sz, inode, str(fID)))
     
     return fID
 
@@ -187,3 +188,23 @@ def launchNext(job, step, context):
         for follower in followers:
             job.addFollowOnJobFn(follower, context)
             
+            
+def createBAMFile(job):
+    outDir = job.fileStore.getLocalTempDir()
+    return (os.path.join(outDir, 'output.bam'), os.path.join(outDir, 'output.bai'))
+
+def commitBAMFile(job, desc, outputBAM, outputBAI):
+    BAMFID = commitFile(job, outputBAM, desc + '-BAM')
+    BAIFID = commitFile(job, outputBAI, desc + '-BAI')
+    return (BAMFID, BAIFID)
+
+def retreiveBAMFile(job, BAMFID, BAIFID):
+    outDir = job.fileStore.getLocalTempDir()
+    inputBAI = os.path.join(outDir, 'input.bai')
+    inputBAM = os.path.join(outDir, 'input.bam')
+    job.fileStore.readGlobalFile(BAIFID, inputBAI)
+    job.fileStore.readGlobalFile(BAMFID, inputBAM)
+    return (inputBAM, inputBAI)
+
+
+    
