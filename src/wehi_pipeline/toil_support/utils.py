@@ -26,18 +26,6 @@ def makedir(wdir):
     
     os.makedirs(wdir)
  
-def commitFile(job, fn, desc):
-    # Seems global name is obfuscated by design
-    # Don't attempt to resolve it as that can potentially
-    # trigger to create a local copy
-    fID = job.fileStore.writeGlobalFile(fn, cleanup=False)
-    statinfo = os.stat(fn)
-    sz = str(statinfo.st_size)
-    inode = str(statinfo.st_ino)
-    logging.info('Committing local description="%s", name=%s, size=%s, inode=%s toilId=%s' % (desc, fn, sz, inode, str(fID)))
-    
-    return fID
-
 def registerDrmaaBatchSystem():
     from toil.batchSystems.registry import addBatchSystemFactory
     from toil.batchSystems.options import addOptionsDefinition
@@ -68,7 +56,46 @@ def getOptions(desc):
 def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
+
+def execute(context, cmds, pipeLineFiles, outfn=None, infn=None):
+    
+    if pipeLineFiles is not list:
+        pipeLineFiles = [pipeLineFiles]
         
+    if outfn is None or context.touchOnly:
+        outfh = None
+    else:
+        outfh = open(outfn, 'w')
+        
+    if infn is None or context.touchOnly:
+        infh = None
+    else:
+        infh = open(infn)
+        
+    if context.touchOnly:
+        for f in pipeLineFiles:
+            touch(f.path())
+    else:
+        try:
+            osExecutor(cmds, outfh, infh)
+        except Exception as exc:
+                closeStream(outfh)            
+                closeStream(infh)
+                raise exc
+            
+    for pf in pipeLineFiles:
+        pf.commit()
+
+def closeStream(stream):
+    if stream is None:
+        return
+    
+    try:
+        stream.close()
+    except:
+        pass
+    
+                            
 def osExecutor(cmds, outfh=None, infh=None):
     '''
     Execute a one or more commands in a pipe
@@ -181,30 +208,14 @@ def launchNext(job, step, context):
     if children is not None:
         for child in children:
             logging.info('Launching step: ' + str(child))
-            job.addChildJobFn(child, context)
+            nj = job.addChildJobFn(child, context)
+            nj.context = context
             
     followers = followersOf(step, context.steps)
     if followers is not None:
         for follower in followers:
-            job.addFollowOnJobFn(follower, context)
+            nj = job.addFollowOnJobFn(follower, context)
+            nj.context = context
             
-            
-def createBAMFile(job):
-    outDir = job.fileStore.getLocalTempDir()
-    return (os.path.join(outDir, 'output.bam'), os.path.join(outDir, 'output.bai'))
-
-def commitBAMFile(job, desc, outputBAM, outputBAI):
-    BAMFID = commitFile(job, outputBAM, desc + '-BAM')
-    BAIFID = commitFile(job, outputBAI, desc + '-BAI')
-    return (BAMFID, BAIFID)
-
-def retreiveBAMFile(job, BAMFID, BAIFID):
-    outDir = job.fileStore.getLocalTempDir()
-    inputBAI = os.path.join(outDir, 'input.bai')
-    inputBAM = os.path.join(outDir, 'input.bam')
-    job.fileStore.readGlobalFile(BAIFID, inputBAI)
-    job.fileStore.readGlobalFile(BAMFID, inputBAM)
-    return (inputBAM, inputBAI)
 
 
-    
