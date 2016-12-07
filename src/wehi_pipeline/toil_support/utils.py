@@ -57,22 +57,24 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-def execute(context, cmds, pipeLineFiles, outfn=None, infn=None):
+def execute(job, cmds, pipeLineFiles, outfn=None, infn=None):
     
-    if pipeLineFiles is not list:
+    touchOnly = job.context.touchOnly
+    
+    if type(pipeLineFiles) is not list:
         pipeLineFiles = [pipeLineFiles]
         
-    if outfn is None or context.touchOnly:
+    if outfn is None or touchOnly:
         outfh = None
     else:
         outfh = open(outfn, 'w')
         
-    if infn is None or context.touchOnly:
+    if infn is None or touchOnly:
         infh = None
     else:
         infh = open(infn)
         
-    if context.touchOnly:
+    if touchOnly:
         for f in pipeLineFiles:
             touch(f.path())
     else:
@@ -200,21 +202,23 @@ def _reportUsage(startR, startT):
     logging.info(msg % ('Elapsed time', '', endT-startT))
     logging.info('-'*80)
  
-def launchNext(job, step, context):
+def launchNext(job, step):
     
     logging.info('Finished step:' + str(step))
+    
+    context = job.context 
     
     children = childrenOf(step, context.steps)
     if children is not None:
         for child in children:
             logging.info('Launching step: ' + str(child))
-            nj = job.addChildJobFn(child, context)
+            nj = job.addChildJobFn(child)
             nj.context = context
             
     followers = followersOf(step, context.steps)
     if followers is not None:
         for follower in followers:
-            nj = job.addFollowOnJobFn(follower, context)
+            nj = job.addFollowOnJobFn(follower)
             nj.context = context
             
 
