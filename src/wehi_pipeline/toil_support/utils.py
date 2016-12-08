@@ -61,6 +61,9 @@ def execute(job, cmds, pipeLineFiles, outfn=None, infn=None):
     
     touchOnly = job.context.touchOnly
     
+    if pipeLineFiles is None:
+        pipeLineFiles = []
+        
     if type(pipeLineFiles) is not list:
         pipeLineFiles = [pipeLineFiles]
         

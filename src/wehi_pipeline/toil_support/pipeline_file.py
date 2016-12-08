@@ -14,8 +14,6 @@ class PipeLineObjectException(Exception):
 class PipeLineDirectory(object):
     
     def __init__(self, job, fileKey=None, fileName=None, destPath=None):
-        if fileName is None:
-            raise PipeLineObjectException('fileName cannot be None for a directory')
         
         c = (1 if fileKey is None else 0) + (1 if destPath is None else 0)
         if c is not 1:
@@ -40,9 +38,15 @@ class PipeLineDirectory(object):
             path = os.path.join(self._path, self.fileName)
             _commitFile(self.job, path, self.fileKey)
         else:
-            src  = os.path.join(self._path, self.fileName)
-            dest = os.path.join(self.destPath, self.fileName)
-            shutil.move(src, dest)
+            fileName = self.fileName
+            if fileName is None:
+                dest = self.destPath
+                src = map(lambda p: os.path.join(self._path, p), os.listdir(self._path))
+            else:
+                src  = [os.path.join(src, fileName)]
+                dest = os.path.join(dest, fileName)
+            for f in src:
+                shutil.move(f, dest)
 
         
 class PipeLineFile(object):
@@ -50,17 +54,18 @@ class PipeLineFile(object):
     classdocs
     '''
 
-    def __init__(self, job, fileKey=None, fileName=None):
+    def __init__(self, job, fileKey=None, fileName=None, destDir=None):
         '''
         Constructor
         '''
         
-        if fileKey is None and fileName is None:
-            raise PipeLineObjectException('A fileKey or a fileName must be supplied')
+        if fileKey is None and destDir is None:
+            raise PipeLineObjectException('A fileKey or a destDir must be supplied')
         
         self.job = job
         self.fileKey = fileKey
         self.fileName = fileName
+        self.destDir = destDir
         
     def create(self):
         if self.fileName is None:
@@ -93,7 +98,11 @@ class PipeLineFile(object):
             self._commitToFileStore()
             
     def _commitToDestination(self):
-        shutil.move(self._path, self.fileName)
+        dest = self.destDir
+        fileName = self.fileName
+        if fileName is not None:
+            dest = os.path.join(dest, fileName)
+        shutil.move(self._path, dest)
         
     def _commitToFileStore(self):
         _commitFile(self.job, self._path, self.fileKey)
