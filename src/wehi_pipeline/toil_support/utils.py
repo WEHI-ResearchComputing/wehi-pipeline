@@ -49,7 +49,7 @@ def getOptions(desc):
 
     options = parser.parse_args()
     options.disableCaching = True
-    options.environment = ['PYTHONPATH', 'TMP']
+    options.environment = ['PYTHONPATH']
     
     return options
 
