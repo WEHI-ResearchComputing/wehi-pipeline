@@ -273,13 +273,13 @@ class DrmaaBatchSystem(BatchSystemSupport):
         except:
             pass
 
-    def issueBatchJob(self, command, memory, cores, disk, preemptable):
-        self.checkResourceRequest(memory, cores, disk)
+    def issueBatchJob(self, jobNode):
+        self.checkResourceRequest(jobNode.memory, jobNode.cores, jobNode.disk)
         jobID = self.nextJobID
         self.nextJobID += 1
         self.currentJobs.add(jobID)
-        self.newJobsQueue.put((jobID, cores, memory, command))
-        logger.debug("Issued the job command: %s with job id: %s ", command, str(jobID))
+        self.newJobsQueue.put((jobID, jobNode.cores, jobNode.memory, jobNode.command))
+        logger.debug("Issued the job command: %s with job id: %s ", jobNode.command, str(jobID))
         return jobID
     
     
@@ -349,8 +349,8 @@ class DrmaaBatchSystem(BatchSystemSupport):
         '''
         return 51, 511*1024
 
-    @staticmethod
-    def setOptions(setOption):
+    @classmethod
+    def setOptions(cls, setOption):
         setOption("jobQueue")
 
         
