@@ -9,6 +9,7 @@ import resource
 import os
 import time
 import argparse
+import traceback
 
 from toil.job import Job
 import logging
@@ -49,7 +50,7 @@ def getOptions(desc):
 
     options = parser.parse_args()
     options.disableCaching = True
-    options.environment = ['PYTHONPATH']
+    options.environment = ['PYTHONPATH', 'TMP']
     
     return options
 
@@ -86,6 +87,7 @@ def execute(job, cmds, pipeLineFiles, outfn=None, infn=None):
         except Exception as exc:
                 closeStream(outfh)            
                 closeStream(infh)
+                traceback.print_exc()
                 raise exc
             
     for pf in pipeLineFiles:

@@ -7,6 +7,7 @@ Created on 6Dec.,2016
 import os
 import shutil
 import logging
+import stat
 
 class PipeLineObjectException(Exception):
     pass
@@ -39,14 +40,20 @@ class PipeLineDirectory(object):
             _commitFile(self.job, path, self.fileKey)
         else:
             fileName = self.fileName
+            
             if fileName is None:
-                dest = self.destPath
-                src = map(lambda p: os.path.join(self._path, p), os.listdir(self._path))
+                srcFiles = os.listdir(self._path)
             else:
-                src  = [os.path.join(src, fileName)]
-                dest = os.path.join(dest, fileName)
-            for f in src:
-                shutil.move(f, dest)
+                srcFiles  = [fileName]
+                
+            for f in srcFiles:
+                tgt = os.path.join(self.destPath, f)
+                src = os.path.join(self._path, f)
+                if os.path.isfile(tgt):
+                    os.remove(tgt)
+                if os.path.isdir(tgt):
+                    os.rmdir(tgt)
+                shutil.move(src, tgt)
 
         
 class PipeLineFile(object):
@@ -59,8 +66,8 @@ class PipeLineFile(object):
         Constructor
         '''
         
-        if fileKey is None and destDir is None:
-            raise PipeLineObjectException('A fileKey or a destDir must be supplied')
+        if fileKey is None and destDir is None and fileName is None:
+            raise PipeLineObjectException('A fileKey, destDir for fileName must be supplied')
         
         self.job = job
         self.fileKey = fileKey
@@ -73,6 +80,8 @@ class PipeLineFile(object):
         else:
             outdir = self.job.fileStore.getLocalTempDir()
             self._path = os.path.join(outdir, self.fileName)
+            
+        logging.info('File created: ' + self.path())
             
     def retrieve(self):
         files = self.job.context.files
@@ -98,15 +107,31 @@ class PipeLineFile(object):
             self._commitToFileStore()
             
     def _commitToDestination(self):
-        dest = self.destDir
         fileName = self.fileName
+        tgt = None
         if fileName is not None:
-            dest = os.path.join(dest, fileName)
-        shutil.move(self._path, dest)
+            tgt = os.path.join(self.destDir, self.fileName)
+            if os.path.isfile(tgt):
+                os.remove(tgt)
+            if os.path.isdir(tgt):
+                raise Exception('fileName=' + fileName + ' already exists as a directory')
+        
+        shutil.move(self._path, self.destDir)
+        
+        if tgt is None:
+            fn = os.path.basename(self._path)
+            tgt = os.path.join(self._path, fn)
+            
+        _logCommittedFileDetails(tgt)
         
     def _commitToFileStore(self):
         _commitFile(self.job, self._path, self.fileKey)
         pass
+    
+def _logCommittedFileDetails(fn):
+    stat = os.stat(fn)
+    logging.info('Committed file: ' + fn)
+    logging.info('Details:        inode=' + stat.ST_INO + ' sz=' + stat.ST_SIZE)
     
 def _commitFile(job, path, fileKey):
     # Seems global name is obfuscated by design
