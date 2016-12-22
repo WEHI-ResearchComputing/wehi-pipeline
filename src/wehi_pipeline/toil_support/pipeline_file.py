@@ -7,9 +7,8 @@ Created on 6Dec.,2016
 import os
 import shutil
 import logging
-import stat
 
-class PipeLineObjectException(Exception):
+class PipeLineFileObjectException(Exception):
     pass
     
 class PipeLineDirectory(object):
@@ -18,7 +17,7 @@ class PipeLineDirectory(object):
         
         c = (1 if fileKey is None else 0) + (1 if destPath is None else 0)
         if c is not 1:
-            raise PipeLineObjectException('Exactly one of fileKey or destPath must be specified')
+            raise PipeLineFileObjectException('Exactly one of fileKey or destPath must be specified')
         
         self.job = job
         self.fileKey = fileKey
@@ -29,7 +28,7 @@ class PipeLineDirectory(object):
         self._path = self.job.fileStore.getLocalTempDir()
         
     def retrieve(self):
-        raise PipeLineObjectException('Retrieving a PipeLineDirectory is not supported')
+        raise PipeLineFileObjectException('Retrieving a PipeLineDirectory is not supported')
     
     def path(self):
         return self._path
@@ -57,28 +56,32 @@ class PipeLineDirectory(object):
 
         
 class PipeLineFile(object):
-    '''
-    classdocs
-    '''
 
-    def __init__(self, job, fileKey=None, fileName=None, destDir=None):
+    def __init__(self, job, fileKey=None, fileName=None, destDir=None, shareDirectoryWith=None):
         '''
         Constructor
         '''
         
         if fileKey is None and destDir is None and fileName is None:
-            raise PipeLineObjectException('A fileKey, destDir for fileName must be supplied')
+            raise PipeLineFileObjectException('A fileKey, destDir for fileName must be supplied')
+
+        if shareDirectoryWith is not None and fileName is None:
+            raise PipeLineFileObjectException('Files that share directories must be named. Please provide a fileName.')
         
         self.job = job
         self.fileKey = fileKey
         self.fileName = fileName
         self.destDir = destDir
+        self.shareWith = shareDirectoryWith
         
     def create(self):
         if self.fileName is None:
             self._path =  self.job.fileStore.getLocalTempFile()
         else:
-            outdir = self.job.fileStore.getLocalTempDir()
+            if self.shareWith is None:
+                outdir = self.job.fileStore.getLocalTempDir()
+            else:
+                outdir = self.shareWith.dir()
             self._path = os.path.join(outdir, self.fileName)
             
         logging.info('File created: ' + self.path())
@@ -99,6 +102,12 @@ class PipeLineFile(object):
         
     def path(self):
         return self._path
+    
+    def dir(self):
+        if os.path.isdir(self._path):
+            return self.path()
+        else:
+            return os.path.dirname(self._path)
 
     def commit(self):
         if self.fileKey is None:
@@ -122,16 +131,20 @@ class PipeLineFile(object):
             fn = os.path.basename(self._path)
             tgt = os.path.join(self._path, fn)
             
-        _logCommittedFileDetails(tgt)
+        _logCommittedFileDetails(tgt, None, None)
         
     def _commitToFileStore(self):
         _commitFile(self.job, self._path, self.fileKey)
         pass
     
-def _logCommittedFileDetails(fn):
-    stat = os.stat(fn)
-    logging.info('Committed file: ' + fn)
-    logging.info('Details:        inode=' + stat.ST_INO + ' sz=' + stat.ST_SIZE)
+def _logCommittedFileDetails(path, fileKey, fID):
+    statinfo = os.stat(path)
+    sz = str(statinfo.st_size)
+    inode = str(statinfo.st_ino)
+    if fileKey is None:
+        logging.info('Committing final file, name=%s, size=%s, inode=%s' % (path, sz, inode))
+    else:
+        logging.info('Committing local description="%s", name=%s, size=%s, inode=%s toilId=%s' % (fileKey, path, sz, inode, str(fID)))
     
 def _commitFile(job, path, fileKey):
     # Seems global name is obfuscated by design
@@ -141,15 +154,12 @@ def _commitFile(job, path, fileKey):
     context = job.context
 
     if fileKey in context.files:
-        raise PipeLineObjectException('The fileKey=' + fileKey + ' has already been used')
+        raise PipeLineFileObjectException('The fileKey=' + fileKey + ' has already been used')
     
     fID = job.fileStore.writeGlobalFile(path, cleanup=False)
     context.files[fileKey] = fID
     
-    statinfo = os.stat(path)
-    sz = str(statinfo.st_size)
-    inode = str(statinfo.st_ino)
-    logging.info('Committing local description="%s", name=%s, size=%s, inode=%s toilId=%s' % (fileKey, path, sz, inode, str(fID)))
+    _logCommittedFileDetails(path, fileKey, fID)
     
     return fID
 
@@ -165,7 +175,7 @@ class PipeLineBAMFile(object):
         '''
         
         if fileKey is None and fileName is None:
-            raise PipeLineObjectException('A fileKey or a fileName must be supplied')
+            raise PipeLineFileObjectException('A fileKey or a fileName must be supplied')
         
         self.job = job
         self.fileKey = fileKey
@@ -183,7 +193,7 @@ class PipeLineBAMFile(object):
         files = self.job.context.files
         
         if self.fileKey not in files:
-            raise PipeLineObjectException('fileKey=' + self.fileKey +' does not exist')
+            raise PipeLineFileObjectException('fileKey=' + self.fileKey +' does not exist')
         
         filename = 'input' if self.fileName is None else self.fileName
         
