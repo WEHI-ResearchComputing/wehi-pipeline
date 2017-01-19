@@ -7,25 +7,30 @@ Created on 6Dec.,2016
 import os
 import shutil
 import logging
+from utils import makedir
 
 class PipeLineFileObjectException(Exception):
     pass
     
 class PipeLineDirectory(object):
     
-    def __init__(self, job, fileKey=None, fileName=None, destPath=None):
+    def __init__(self, job, fileKey=None, fileName=None, destDir=None, dirName=None):
         
-        c = (1 if fileKey is None else 0) + (1 if destPath is None else 0)
+        c = (1 if fileKey is None else 0) + (1 if destDir is None else 0)
         if c is not 1:
             raise PipeLineFileObjectException('Exactly one of fileKey or destPath must be specified')
         
         self.job = job
         self.fileKey = fileKey
         self.fileName = fileName
-        self.destPath = destPath
+        self.destDir = destDir
+        self.dirName = dirName
         
     def create(self):
         self._path = self.job.fileStore.getLocalTempDir()
+        if self.dirName is not None:
+            self._path = os.path.join(self._path, self.dirName)
+            os.makedirs(self._path)
         
     def retrieve(self):
         raise PipeLineFileObjectException('Retrieving a PipeLineDirectory is not supported')
@@ -34,25 +39,34 @@ class PipeLineDirectory(object):
         return self._path
     
     def commit(self):
-        if self.fileKey is not None:
-            path = os.path.join(self._path, self.fileName)
-            _commitFile(self.job, path, self.fileKey)
+        if self.fileKey is None:
+            self._commitToFileSystem()
         else:
-            fileName = self.fileName
-            
-            if fileName is None:
-                srcFiles = os.listdir(self._path)
-            else:
-                srcFiles  = [fileName]
+            self._commitToStore()
                 
-            for f in srcFiles:
-                tgt = os.path.join(self.destPath, f)
-                src = os.path.join(self._path, f)
-                if os.path.isfile(tgt):
-                    os.remove(tgt)
-                if os.path.isdir(tgt):
-                    os.rmdir(tgt)
-                shutil.move(src, tgt)
+    def _commitToFileSystem(self):
+        fileName = self.fileName
+        
+        if fileName is None:
+            srcFiles = os.listdir(self._path)
+        else:
+            srcFiles  = [fileName]
+
+        makedir(self.destDir)
+                    
+        for f in srcFiles:
+            tgt = os.path.join(self.destDir, f)
+            src = os.path.join(self._path, f)
+            if os.path.isfile(tgt):
+                os.remove(tgt)
+            if os.path.isdir(tgt):
+                os.rmdir(tgt)
+            shutil.move(src, tgt)
+            
+    def _commitToStore(self):
+        path = os.path.join(self._path, self.fileName)
+        _commitFile(self.job, path, self.fileKey)
+    
 
         
 class PipeLineFile(object):
@@ -61,6 +75,9 @@ class PipeLineFile(object):
         '''
         Constructor
         '''
+        
+        if fileKey is not None and destDir is not None:
+            raise PipeLineFileObjectException('A fileKey and destDir are mutually exclusive.')
         
         if fileKey is None and destDir is None and fileName is None:
             raise PipeLineFileObjectException('A fileKey, destDir for fileName must be supplied')
@@ -125,11 +142,21 @@ class PipeLineFile(object):
             if os.path.isdir(tgt):
                 raise Exception('fileName=' + fileName + ' already exists as a directory')
         
-        shutil.move(self._path, self.destDir)
+        if os.path.isfile(self.destDir):
+            raise Exception('The destiniation directory exists as a file')
         
+        if not os.path.isdir(self.destDir):
+            os.makedirs(self.destDir)
+            
         if tgt is None:
             fn = os.path.basename(self._path)
             tgt = os.path.join(self._path, fn)
+
+        if os.path.exists(tgt):
+            os.remove(tgt)
+            
+        shutil.move(self._path, self.destDir)
+        
             
         _logCommittedFileDetails(tgt, None, None)
         
@@ -169,7 +196,7 @@ class PipeLineBAMFile(object):
     classdocs
     '''
 
-    def __init__(self, job, fileKey=None, fileName=None):
+    def __init__(self, job, fileKey=None, fileName=None, destDir=None):
         '''
         Constructor
         '''
@@ -177,9 +204,14 @@ class PipeLineBAMFile(object):
         if fileKey is None and fileName is None:
             raise PipeLineFileObjectException('A fileKey or a fileName must be supplied')
         
+        if fileKey is not None and destDir is not None:
+            raise PipeLineFileObjectException('Specifying fileKey and destDir is incompatible')
+            
+        
         self.job = job
         self.fileKey = fileKey
         self.fileName = fileName
+        self.destDir = destDir
         
     def create(self):
         filename = 'output' if self.fileName is None else self.fileName
@@ -218,8 +250,11 @@ class PipeLineBAMFile(object):
             self._commitToFileStore()
             
     def _commitToDestination(self):
-        shutil.move(self.baiPath, self.fileName)
-        shutil.move(self.bamPath, self.fileName)
+        makedir(self.destDir)
+        _deleteIfExists(self.bamPath, self.destDir)
+        _deleteIfExists(self.baiPath, self.destDir)
+        shutil.move(self.baiPath, self.destDir)
+        shutil.move(self.bamPath, self.destDir)
         
     def _commitToFileStore(self):
         files = self.job.context.files
@@ -233,3 +268,9 @@ class PipeLineBAMFile(object):
         files[self.fileKey] = (BAMFID, BAIFID)
 
 
+def _deleteIfExists(fn, dest):
+    fn = os.path.basename(fn)
+    tgt = os.path.join(dest, fn)
+
+    if os.path.exists(tgt):
+        os.remove(tgt)

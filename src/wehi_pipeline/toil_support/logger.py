@@ -63,7 +63,7 @@ class StreamLogger:
         
     def streamCopy(self, level, stream):
         for line in iter(stream.readline, b''):
-            line = line.decode('utf-8')
+            line = line.decode('utf-8').strip('\n')
             self.ioQueue.put('[' + level + '] ' + line)
             
     def log(self, level, msg):
