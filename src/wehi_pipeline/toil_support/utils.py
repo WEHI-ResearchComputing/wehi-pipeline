@@ -10,6 +10,7 @@ import os
 import time
 import argparse
 import traceback
+import tempfile
 
 from toil.job import Job
 import logging
@@ -17,6 +18,11 @@ import logging
 from wehi_pipeline.toil_support.jobStep import childrenOf
 from wehi_pipeline.toil_support.jobStep import followersOf
 from wehi_pipeline.toil_support.logger import StreamLogger
+
+
+def tempDir(job):
+    tmp = job.context.getTempDir()
+    return tempfile.mkdtemp(prefix="t", dir=tmp)
 
 def makedir(wdir):
     if os.path.isdir(wdir): 
@@ -39,7 +45,7 @@ def registerDrmaaBatchSystem():
         
     def addOptions(addOptionFn):
         addOptionFn("--jobQueue", dest="jobQueue", default=None,
-                help=("A job queue (used by the DRMAA batch system"))
+                help=("A job queue (used by the DRMAA batch system)"))
         
     addOptionsDefinition(addOptions)
     
@@ -50,7 +56,8 @@ def getOptions(desc):
 
     options = parser.parse_args()
     options.disableCaching = True
-    options.environment = ['PYTHONPATH', 'TMP']
+    
+    options.environment = ['PYTHONPATH']
     
     return options
 

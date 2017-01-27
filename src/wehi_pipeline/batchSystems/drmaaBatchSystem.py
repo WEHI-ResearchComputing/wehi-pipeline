@@ -19,6 +19,7 @@ Evan Thomas
 '''
 
 from __future__ import absolute_import
+from drmaa.errors import DrmCommunicationException
 import logging
 import time
 import os
@@ -31,7 +32,7 @@ from toil.batchSystems.abstractBatchSystem import BatchSystemSupport
 
 logger = logging.getLogger(__name__)
 
-QUEUE_POLL_TIME = 1 # sec
+QUEUE_POLL_TIME = 10 # sec
 
 class DrmaaWorker(Thread):
     def __init__(self, newJobsQueue, updatedJobsQueue, killQueue, killedJobsQueue, config, boss):
@@ -188,7 +189,7 @@ class DrmaaWorker(Thread):
             
         if session.drmsInfo == u'Torque':
             try:
-                jt.nativeSpecification = '-q ' + self.jobQueue
+                jt.nativeSpecification = '-l nodes=1:ppn=2 -q ' + self.jobQueue
             except NameError:
                 # No job queue specified
                 pass
@@ -198,8 +199,12 @@ class DrmaaWorker(Thread):
     def getJobExitCode(self, drmaaJobID):
         logger.debug("Getting exit code for drmaa job %s", str(drmaaJobID))
         try:
-            # Wait second, then assume job has not completed
-            info=self.drmaaSession.wait(drmaaJobID, QUEUE_POLL_TIME)
+            try:
+                info=self.drmaaSession.wait(drmaaJobID, drmaa.TIMEOUT_NO_WAIT)
+            except DrmCommunicationException as ex:
+                # Crappy torque implementation. Return None and try again later
+                logger.info('DrmCommunicationException: ' + str(ex))
+                return None    
             
             if info is None:
                 return None
