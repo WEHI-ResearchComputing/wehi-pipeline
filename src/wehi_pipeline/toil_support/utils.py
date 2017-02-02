@@ -11,6 +11,7 @@ import time
 import argparse
 import traceback
 import tempfile
+import shlex
 
 from toil.job import Job
 import logging
@@ -144,7 +145,7 @@ def osExecutor(cmds, outfh=None, infh=None):
             bufsize = 0
             outStream = subprocess.PIPE
             
-        cmdBits = cmd.split()
+        cmdBits = shlex.split(cmd)
         cmdName = cmdBits[0]
         sp = subprocess.Popen(cmdBits, 
                           bufsize=bufsize,
