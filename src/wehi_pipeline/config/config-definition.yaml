@@ -1,0 +1,10 @@
+type: //pipeline-definition
+required:
+  name: //str
+optional:
+  description: //str
+  reference:
+    type: //reference
+      required:
+        name: //str
+        path: //str

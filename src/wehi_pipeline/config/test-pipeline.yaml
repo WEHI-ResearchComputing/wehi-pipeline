@@ -1,0 +1,6 @@
+pipeline:
+  name: test pipeline
+  description: a test pipeline
+  reference:
+    name: human
+    path: /path/to/file
