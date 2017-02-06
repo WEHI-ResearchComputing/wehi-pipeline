@@ -1,10 +1,92 @@
-type: //pipeline-definition
-required:
-  name: //str
-optional:
-  description: //str
-  reference:
-    type: //reference
-      required:
-        name: //str
-        path: //str
+title: pipeline-definition
+type: object
+properties:
+
+  name:
+    type: string
+
+  description:
+    type: string
+    minimum: 0
+
+  resources:
+    type: object
+    minimum: 0
+    properties:
+      queue:
+        type: string
+        minimum: 0
+
+  fastqs:
+    type: object
+    minimum: 0
+    properties:
+      paired:
+        type: boolean
+        minimum: 0
+      path:
+        type: string
+        minimum: 0
+        maximum: 999999999
+      pattern:
+        type: string
+        minimum: 1
+
+  references:
+    type: object
+    minimum: 0
+    maximum: 999999999
+    properties:
+      name:
+        type: string
+      path:
+        type: string
+
+  destinations:
+    type: object
+    properties:
+      name:
+        type: string
+      path:
+        type: string
+
+  steps:
+    type: object
+    minimum: 1
+    maximum: 1
+    properties:
+      generic:
+        type: object
+        minimum: 0
+        properties:
+
+          name:
+            type: string
+            minimum: 0
+
+          outputs:
+            type: object
+            properties:
+              name:
+                type: string
+              type:
+                enum:
+                  - BAM
+                  - regular
+              destination:
+                type: string
+
+          command:
+            type: string
+
+          precommand:
+            type: object
+            properties:
+              command:
+                type: string
+              variable:
+                type: string
+
+          modules:
+            type: string
+

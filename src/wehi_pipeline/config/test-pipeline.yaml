@@ -1,6 +1,48 @@
-pipeline:
+pipeline-definition:
   name: test pipeline
   description: a test pipeline
-  reference:
+
+  references:
     name: human
     path: /path/to/file
+
+  fastqs:
+    pattern: $sample_$direction.fastq.gz
+    path: /path/to/fastqs
+
+  destinations:
+    - name: bams
+      path: /wehisan/bioinf/bioinf-data/bahlolab/malaria_genomics_pf3k/data/bam/$sample
+    - name: variants
+      path: /wehisan/bioinf/bioinf-data/bahlolab/malaria_genomics_pf3k/data/variant/$sample
+    - name: qc
+      path: /wehisan/bioinf/bioinf-data/bahlolab/malaria_genomics_pf3k/data/qc/$sample
+
+  steps:
+    - generic:
+        name: step1
+        outputs:
+          - name: uBam
+            type: BAM
+            destination: $ubam/$sample.bam
+        precommand:
+          command: zcat $forward | head -n1 | cut -d":" -f3,6,7 | sed 's/:/./g' | sed 's/\\s1//g'
+          variable: pu
+        command: |
+                FastqToSam \
+                F1=$forward \
+                F2=$backward \
+                O=$uBam \
+                SM=$sample \
+                RG=$sample \
+                PU=$pu \
+                PLATFO=ILLUMINA \
+                SEQUENCING_CENTER=WEHI \
+                SORT_ORDER=queryname \
+                TMP_DIR=$temp-dir
+        modules:
+          - picard
+
+    - generic:
+        name: step2
+        command: echo hello
