@@ -9,6 +9,7 @@ pipeline-definition:
   fastqs:
     pattern: $sample_$direction.fastq.gz
     path: /path/to/fastqs
+    finish-at: 1
 
   destinations:
     - name: bams

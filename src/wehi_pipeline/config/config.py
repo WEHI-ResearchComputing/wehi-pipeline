@@ -5,8 +5,9 @@ Created on 3Feb.,2017
 '''
 import yaml
 from wehi_pipeline.config.definition import ConfigDefinition
-from wehi_pipeline.config.configStep import stepFactory
+from wehi_pipeline.steps.jobStep import stepFactory
 from wehi_pipeline.config import ConfigException
+from wehi_pipeline.config.symbols import DestinationSymbol, BuiltInSymbol
 
 class Config(object):
     '''
@@ -53,41 +54,6 @@ class Config(object):
             steps.append(stepFactory(step))
             
         return steps
-            
-        
-class Symbol(object):
-    
-    def __init__(self, name, value):  
-        self._name = name
-        self._value = value
-        
-    def setValue(self, value):
-        self._value = value
-    
-    def hasValue(self):
-        return self._value is not None
-    
-    def name(self):
-        return self._name
-    
-    def value(self):
-        return self._value
-    
-class BuiltInSymbol(Symbol):
-    
-    def __init__(self, name):
-        super(BuiltInSymbol, self).__init__(name, None)
-    
-class DestinationSymbol(Symbol):
-    
-    def __init__(self, name, path):
-        super(DestinationSymbol, self).__init__(name, path)
-    
-class ReferenceSymbol(Symbol):
-    
-    def __init__(self, name, path):
-        super(ReferenceSymbol, self).__init__(name, path)
-    
 
 _builtin_symbol_map = {
     'sample' : BuiltInSymbol('sample'),

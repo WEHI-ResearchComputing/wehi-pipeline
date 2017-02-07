@@ -12,12 +12,10 @@ from jsonschema.exceptions import SchemaError
 
 DEFINITION = 'config-definition.yaml'
 
-
 class ConfigDefinition(object):
     '''
     This reads the DEFINITION which defines a valid pipeline configuration
     '''
-
 
     def __init__(self):
         with open(DEFINITION, 'r') as y:

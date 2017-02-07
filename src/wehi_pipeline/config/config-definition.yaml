@@ -31,6 +31,12 @@ properties:
       pattern:
         type: string
         minimum: 1
+      start-at:
+        type: integer
+        minimum: 0
+      finish-at:
+        type: integer
+        minimum: 0
 
   references:
     type: object
