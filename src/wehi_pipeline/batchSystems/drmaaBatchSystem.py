@@ -189,7 +189,8 @@ class DrmaaWorker(Thread):
             
         if session.drmsInfo == u'Torque':
             try:
-                jt.nativeSpecification = '-l nodes=1:ppn=3,mem=31gb -q ' + self.jobQueue
+                jt.nativeSpecification = ' -q ' + self.jobQueue
+#                 jt.nativeSpecification = '-l nodes=1:ppn=3,mem=31gb -q ' + self.jobQueue
             except NameError:
                 # No job queue specified
                 pass
