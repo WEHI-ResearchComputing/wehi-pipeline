@@ -3,8 +3,10 @@ pipeline-definition:
   description: a test pipeline
 
   references:
-    name: human
-    path: /path/to/file
+    - name: human
+      path: /path/to/file/human
+    - name: frog
+      path: /path/to/file/frog
 
   fastqs:
     pattern: $sample_$direction.fastq.gz

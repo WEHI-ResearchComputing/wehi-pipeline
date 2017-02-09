@@ -51,3 +51,9 @@ class PreCommand(Symbol):
         super(PreCommand, self).__init__(config['variable'], None, False)
         self._command = config['command']
 
+
+def findSymbol(token, tables):
+    for table in tables:
+        if token in table:
+            return table[token]
+    return None

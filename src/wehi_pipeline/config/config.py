@@ -7,7 +7,7 @@ import yaml
 from wehi_pipeline.config.definition import ConfigDefinition
 from wehi_pipeline.steps.jobStep import stepFactory
 from wehi_pipeline.config import ConfigException
-from wehi_pipeline.config.symbols import DestinationSymbol, BuiltInSymbol
+from wehi_pipeline.config.symbols import DestinationSymbol, BuiltInSymbol, ReferenceSymbol
 
 class Config(object):
     '''
@@ -23,6 +23,17 @@ class Config(object):
         
         with open(fileName) as c:
             self.config = yaml.load(c)
+            
+        self._pathSymbols = self._symbolMapFor('destinations', DestinationSymbol)
+        self._referenceSymbols = self._symbolMapFor('references', ReferenceSymbol)
+        self._builtinSymbols = _builtin_symbol_map.copy()
+        
+        sns = set()
+        for sn in self._pathSymbols.keys():
+            if sn in sns:
+                raise ConfigException('The symbol ' + sn + ' is multiply defined.')
+            sns.add(sn)
+                
         
     def validationErrors(self):
         return self.errors
@@ -31,21 +42,32 @@ class Config(object):
         return self.defn.isValid(self.config)
     
     def pathSymbolMap(self):
-        return self._symbolMap('destination')
+        return self._pathSymbols
     
     def referenceSymbolMap(self):
-        return self._symbolMap('reference')
+        return self._referenceSymbols
+    
+    def builtinSymbolMap(self):
+        return self._builtinSymbols
             
-    def _symbolMap(self, symbolType):
+    def _symbolMapFor(self, symbolType, symbolConstructor):
         paths = dict()
         
-        for pathSymbol in self.config['pipeline-definition']['destinations']:
-            name = pathSymbol['name']
+        for symbol in self.config['pipeline-definition'][symbolType]:
+            name = symbol['name']
             if name in paths:
                 raise ConfigException(symbolType + ' ' + name + ' is multiply defined.')
-            paths[name] = DestinationSymbol(name, pathSymbol['path'])    
+            paths[name] = symbolConstructor(name, symbol['path'])    
             
         return paths
+    
+    def symbols(self):
+        x = dict()
+        x.update(self.pathSymbolMap())
+        x.update(self.referenceSymbolMap())
+        x.update(self.buildinSymbolMap())
+        
+        return x
     
     def steps(self):
         steps = []
@@ -56,8 +78,8 @@ class Config(object):
         return steps
 
 _builtin_symbol_map = {
-    'sample' : BuiltInSymbol('sample'),
-    'forward' : BuiltInSymbol('forward'),
+    'sample'   : BuiltInSymbol('sample'),
+    'forward'  : BuiltInSymbol('forward'),
     'backward' : BuiltInSymbol('backward'),
     'temp-dir' : BuiltInSymbol('temp-dir'),
     }

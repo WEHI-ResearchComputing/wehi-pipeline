@@ -16,6 +16,15 @@ properties:
       queue:
         type: string
         minimum: 0
+      ppn:
+        type: integer
+        minimum: 0
+      nodes:
+        type: integer
+        minimum: 0
+      mem:
+        type: string
+        minimum: 0
 
   fastqs:
     type: object
@@ -41,7 +50,6 @@ properties:
   references:
     type: object
     minimum: 0
-    maximum: 999999999
     properties:
       name:
         type: string
