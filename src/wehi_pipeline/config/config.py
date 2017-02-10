@@ -7,7 +7,9 @@ import yaml
 from wehi_pipeline.config.definition import ConfigDefinition
 from wehi_pipeline.steps.jobStep import stepFactory
 from wehi_pipeline.config import ConfigException
-from wehi_pipeline.config.symbols import DestinationSymbol, BuiltInSymbol, ReferenceSymbol
+from wehi_pipeline.config.symbols import DestinationSymbol, ReferenceSymbol
+from toil.job import Job
+from wehi_pipeline.toil_support.context import WorkflowContext
 
 class Config(object):
     '''
@@ -26,13 +28,13 @@ class Config(object):
             
         self._pathSymbols = self._symbolMapFor('destinations', DestinationSymbol)
         self._referenceSymbols = self._symbolMapFor('references', ReferenceSymbol)
-        self._builtinSymbols = _builtin_symbol_map.copy()
         
-        sns = set()
-        for sn in self._pathSymbols.keys():
-            if sn in sns:
-                raise ConfigException('The symbol ' + sn + ' is multiply defined.')
-            sns.add(sn)
+        if self._pathSymbols is not None:
+            sns = set()
+            for sn in self._pathSymbols.keys():
+                if sn in sns:
+                    raise ConfigException('The symbol ' + sn + ' is multiply defined.')
+                sns.add(sn)
                 
         
     def validationErrors(self):
@@ -51,6 +53,10 @@ class Config(object):
         return self._builtinSymbols
             
     def _symbolMapFor(self, symbolType, symbolConstructor):
+        
+        if symbolType not in self.config['pipeline-definition']:
+            return None
+        
         paths = dict()
         
         for symbol in self.config['pipeline-definition'][symbolType]:
@@ -77,20 +83,16 @@ class Config(object):
             
         return steps
 
-_builtin_symbol_map = {
-    'sample'   : BuiltInSymbol('sample'),
-    'forward'  : BuiltInSymbol('forward'),
-    'backward' : BuiltInSymbol('backward'),
-    'temp-dir' : BuiltInSymbol('temp-dir'),
-    }
 
 if __name__ == '__main__':
-    c = Config('test-pipeline.yaml')
+    c = Config('f.yaml')
     
     if not c.isValid():
         print c.validationErrors()[0]
         
-    steps = c.steps()
-    print(steps)
-        
+    j = Job()
+    j.context = WorkflowContext('forwardO', 'backwardO', 'sampleO', '/tmp', c.steps())
+    
+    c.steps()[0].function()(j)
+    
     

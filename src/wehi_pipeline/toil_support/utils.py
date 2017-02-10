@@ -234,5 +234,10 @@ def launchNext(job, step):
             nj = job.addFollowOnJobFn(follower)
             nj.context = context
             
-
+def asList(x):
+    if x is None:
+        return x
+    if type(x) is list:
+        return x
+    return [x]
 

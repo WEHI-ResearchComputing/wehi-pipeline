@@ -90,10 +90,10 @@ properties:
               destination:
                 type: string
 
-          command:
+          commands:
             type: string
 
-          precommand:
+          precommands:
             type: object
             properties:
               command:

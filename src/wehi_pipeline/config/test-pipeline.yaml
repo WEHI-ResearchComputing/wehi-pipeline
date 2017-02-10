@@ -14,6 +14,8 @@ pipeline-definition:
     finish-at: 1
 
   destinations:
+    - name: ubams
+      path: /wehisan/bioinf/bioinf-data/bahlolab/malaria_genomics_pf3k/data/ubam/$sample
     - name: bams
       path: /wehisan/bioinf/bioinf-data/bahlolab/malaria_genomics_pf3k/data/bam/$sample
     - name: variants
@@ -27,11 +29,12 @@ pipeline-definition:
         outputs:
           - name: uBam
             type: BAM
-            destination: $ubam/$sample.bam
-        precommand:
+            destination: $ubams
+            filename: $sample.bam
+        precommands:
           command: zcat $forward | head -n1 | cut -d":" -f3,6,7 | sed 's/:/./g' | sed 's/\\s1//g'
           variable: pu
-        command: |
+        commands: |
                 FastqToSam \
                 F1=$forward \
                 F2=$backward \
