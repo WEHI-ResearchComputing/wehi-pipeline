@@ -59,16 +59,17 @@ class GenericStep(JobStep):
         self._commands = asList(config['commands'])
             
     def symbols(self):
-            return dict()
+        return self._outputs + self._preCommands
         
     def function(self):
         def f(job):
             
-            (cmds, outputFiles) = _prepareCommandLines(job, self._commands, self._config, self, job.context.knownFiles)
+            (cmds, outputFiles) = _prepareCommandLines(job, self._commands, self.symbols(), self, job.context.knownFiles)
                 
             print(cmds)
             print(outputFiles)
-#             execute(job, cmds, outputFiles)
+            #             execute(job, cmds, outputFiles)
+            
         return f
 
 def _isEmpty(thing):
@@ -96,13 +97,13 @@ def _prepareCommandLines(job, commands, config, stepConfig, knownFiles):
 
 def _processCommandLine(job, cmd, config, stepConfig, knownFiles):
 
-    evaluate(job, cmd, config, stepConfig, knownFiles)
+    cmd = evaluate(job, cmd, [config, stepConfig.symbols(), knownFiles])
 
     outputFiles = []    
     for symbol in stepConfig.symbols():
         if type(symbol) is Output:
             outputFiles.append(symbol.pipeLineFile())
-            knownFiles[symbol.name()] = symbol
+            knownFiles.append(symbol)
             
             
     return (cmd, outputFiles)

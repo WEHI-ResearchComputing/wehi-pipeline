@@ -90,13 +90,14 @@ class Config(object):
             
         return steps
 
-
 if __name__ == '__main__':
     c = Config('test-pipeline.yaml')
     
     j = Job()
     j.context = WorkflowContext('forwardO', 'backwardO', 'sampleO', '/tmp', c.steps())
     
-    c.steps()[0].function()(j)
-    
+    for step in c.steps():
+        print(step.name())
+        step.function()(j)
+        print('\n')
     

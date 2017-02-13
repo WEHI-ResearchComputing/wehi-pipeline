@@ -74,6 +74,12 @@ class BuiltInSymbol(AbstractSymbol):
         if not self._resolved:
             self.resolve(job)
         return self._value
+        
+    def tokens(self):
+        pass
+
+    def updateTokens(self, tokens):
+        pass
 
 _builtin_symbol_map = {
     'sample'   : BuiltInSymbol('sample'),
@@ -120,15 +126,15 @@ class Output(AbstractSymbol):
         self._type = config['type'] if 'type' in config else 'regular'
         self._filename    = config['filename'] if 'filename' in config else None
         self._destination = config['destination'] if 'destination' in config else None
-        self._fileKey = None if self._destination is None else self._name
+        self._fileKey = self._name if self._destination is None else None
         
         self._created = False
-        self._resloved = False
+        self._resolved = False
         
     def resolve(self, job):
-        if self._resloved:
+        if self._resolved:
             return
-        self._resloved = True
+        self._resolved = True
         
         if self._type == 'regular':
             self._plFile = PipeLineFile(job, fileKey=self._fileKey, destDir=self._destination, fileName=self._filename)
@@ -188,18 +194,18 @@ def findSymbol(token, tables):
     return None
 
 def evaluate(job, s, tables):
-    tables.prepend(builtInSymbolMap())
+    tables.insert(0, builtInSymbols())
     
     tokens = dict()
     for table in tables:
         for symbol in table:
             symbol.updateTokens(tokens)
-            tokens[symbol.name()] = symbol.value()
+            tokens[symbol.name()] = symbol.value(job)
             
     return _replaceTokens(s, tokens)
 
-def builtInSymbolMap():
-    return _builtin_symbol_map.copy()
+def builtInSymbols():
+    return _builtin_symbol_map.copy().values()
 
 def _getTokens(s):
     tks = re.findall('\$[0-9a-zA-Z]*', s)
@@ -212,7 +218,8 @@ def _replaceTokens(cmd, tokens):
     if cmd is None:
         return None
     
-    for (token, value) in tokens:
-        cmd = ('\$'+token, value, cmd)
+    for (token, value) in tokens.iteritems():
+        if value is not None:
+            cmd = re.sub('\$'+token, value, cmd)
 
     return cmd

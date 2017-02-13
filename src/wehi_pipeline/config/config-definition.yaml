@@ -10,7 +10,6 @@ pipeline-definition:
 
     description:
       type: string
-      minimum: 0
 
     resources:
       type: object
@@ -19,13 +18,10 @@ pipeline-definition:
           type: string
         ppn:
           type: integer
-          minimum: 0
         nodes:
           type: integer
-          minimum: 0
         mem:
           type: string
-          minimum: 0
 
     fastqs:
       type: object

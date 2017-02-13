@@ -212,12 +212,19 @@ class PipeLineBAMFile(object):
         self.fileKey = fileKey
         self.fileName = fileName
         self.destDir = destDir
+        if hasattr(job, 'fileStore'):
+            self._fs = job.fileStore
+        else:
+            self._fs = None
         
     def create(self):
         filename = 'output' if self.fileName is None else self.fileName
-        outDir = self.job.fileStore.getLocalTempDir()
-        self.bamPath = os.path.join(outDir, filename + '.bam')
-        self.baiPath = os.path.join(outDir, filename + '.bai')
+        if self._fs is None:
+            self.bamPath = None
+        else:
+            outDir = self._fs.getLocalTempDir()
+            self.bamPath = os.path.join(outDir, filename + '.bam')
+            self.baiPath = os.path.join(outDir, filename + '.bai')
         
         return self.bamPath
             
@@ -231,12 +238,15 @@ class PipeLineBAMFile(object):
         
         (BAMFID, BAIFID) = files[self.fileKey]
         
-        outDir = self.job.fileStore.getLocalTempDir()
-        self.baiPath = os.path.join(outDir, filename + '.bai')
-        self.bamPath = os.path.join(outDir, filename + '.bam')
+        if self._fs is not None:
+            outDir = self._fs.getLocalTempDir()
+            self.baiPath = os.path.join(outDir, filename + '.bai')
+            self.bamPath = os.path.join(outDir, filename + '.bam')
         
-        self.job.fileStore.readGlobalFile(BAIFID, self.baiPath)
-        self.job.fileStore.readGlobalFile(BAMFID, self.bamPath)
+            self._fs.readGlobalFile(BAIFID, self.baiPath)
+            self._fs.readGlobalFile(BAMFID, self.bamPath)
+        else:
+            self.bamPath = None
                     
         return self.bamPath
         

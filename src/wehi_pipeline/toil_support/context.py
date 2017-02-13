@@ -20,7 +20,7 @@ class WorkflowContext(object):
         self.tmpBase = tmpBase
         self.touchOnly = False
         self.steps = steps
-        self.files = dict()
+        self.knownFiles = []
         
     def setTouchOnly(self, touchOnly):
         self.touchOnly = touchOnly
@@ -31,4 +31,4 @@ class WorkflowContext(object):
     def getTempDir(self):
         p = os.path.join(self.tmpBase, self.identifier)
         makedir(p)
-        return p;
+        return p
