@@ -22,12 +22,13 @@ from wehi_pipeline.config.symbols import Output
 
 class JobStep(object):
 
-    def __init__(self, name, outputs):
-        self._name = name
+    def __init__(self, config):
+        self._config = config
+        self._name = self._config['name']
+        
         self._outputs = []
-        if outputs is not None:
-            if type(outputs) is not list:
-                outputs = [outputs]
+        if 'outputs' in self._config:
+            outputs = self._config['outputs']
             for o in outputs:
                 self._outputs.append(Output(o))
         
@@ -43,8 +44,7 @@ class JobStep(object):
 class GenericStep(JobStep):
     
     def __init__(self, config):
-        outputs = config['outputs'] if 'outputs' in config else None
-        super(GenericStep, self).__init__(config['name'], outputs)
+        super(GenericStep, self).__init__(config)
         
         self._preCommands = []
         if 'precommands' in config:

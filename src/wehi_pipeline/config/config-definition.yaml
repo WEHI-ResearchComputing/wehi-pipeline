@@ -1,106 +1,113 @@
-title: pipeline-definition
-type: object
-properties:
+pipeline-definition:
+  type: object
 
-  name:
-    type: string
+  required: [name, fastqs, steps]
 
-  description:
-    type: string
-    minimum: 0
+  properties:
 
-  resources:
-    type: object
-    minimum: 0
-    properties:
-      queue:
-        type: string
-        minimum: 0
-      ppn:
-        type: integer
-        minimum: 0
-      nodes:
-        type: integer
-        minimum: 0
-      mem:
-        type: string
-        minimum: 0
+    name:
+      type: string
 
-  fastqs:
-    type: object
-    minimum: 0
-    properties:
-      paired:
-        type: boolean
-        minimum: 0
-      path:
-        type: string
-        minimum: 0
-        maximum: 999999999
-      pattern:
-        type: string
-        minimum: 1
-      start-at:
-        type: integer
-        minimum: 0
-      finish-at:
-        type: integer
-        minimum: 0
+    description:
+      type: string
+      minimum: 0
 
-  references:
-    type: object
-    minimum: 0
-    properties:
-      name:
-        type: string
-      path:
-        type: string
+    resources:
+      type: object
+      properties:
+        queue:
+          type: string
+        ppn:
+          type: integer
+          minimum: 0
+        nodes:
+          type: integer
+          minimum: 0
+        mem:
+          type: string
+          minimum: 0
 
-  destinations:
-    type: object
-    properties:
-      name:
-        type: string
-      path:
-        type: string
+    fastqs:
+      type: object
+      required: [path, pattern]
+      properties:
+        paired:
+          type: boolean
+        path:
+          type: string
+        pattern:
+          type: string
+        start-at:
+          type: integer
+        finish-at:
+          type: integer
 
-  steps:
-    type: object
-    minimum: 1
-    maximum: 1
-    properties:
-      generic:
+    references:
+      type: array
+      items:
         type: object
-        minimum: 0
+        required: [name, path]
         properties:
-
           name:
             type: string
-            minimum: 0
+          path:
+            type: string
 
-          outputs:
+    destinations:
+      type: array
+      items:
+        type: object
+        required: [name, path]
+        properties:
+          name:
+            type: string
+          path:
+            type: string
+
+    steps:
+      type: array
+      items:
+        type: object
+        properties:
+          generic:
             type: object
+            required: [name, commands]
             properties:
               name:
                 type: string
-              type:
-                enum:
-                  - BAM
-                  - regular
-              destination:
-                type: string
 
-          commands:
-            type: string
+              outputs:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    type:
+                      enum:
+                        - BAM
+                        - regular
+                    destination:
+                      type: string
 
-          precommands:
-            type: object
-            properties:
-              command:
-                type: string
-              variable:
-                type: string
+              commands:
+                type: array
+                items:
+                  type: string
 
-          modules:
-            type: string
+              precommands:
+                type: array
+                items:
+                  type: object
+                  required: [command, variable]
+                  properties:
+                    command:
+                      type: string
+                    variable:
+                      type: string
+
+              modules:
+                type: array
+                items:
+                  type: string
 

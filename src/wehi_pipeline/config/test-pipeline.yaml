@@ -32,9 +32,10 @@ pipeline-definition:
             destination: $ubams
             filename: $sample.bam
         precommands:
-          command: zcat $forward | head -n1 | cut -d":" -f3,6,7 | sed 's/:/./g' | sed 's/\\s1//g'
-          variable: pu
-        commands: |
+          - command: zcat $forward | head -n1 | cut -d":" -f3,6,7 | sed 's/:/./g' | sed 's/\\s1//g'
+            variable: pu
+        commands:
+          - |
                 FastqToSam \
                 F1=$forward \
                 F2=$backward \
@@ -51,4 +52,5 @@ pipeline-definition:
 
     - generic:
         name: step2
-        command: echo hello
+        commands:
+          - echo hello

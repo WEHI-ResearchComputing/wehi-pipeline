@@ -6,9 +6,9 @@ Created on 3Feb.,2017
 
 import yaml
 from jsonschema.validators import Draft4Validator
-from jsonschema.validators import validate
 from jsonschema.exceptions import ValidationError
 from jsonschema.exceptions import SchemaError
+from wehi_pipeline.config import ConfigException
 
 DEFINITION = 'config-definition.yaml'
 
@@ -19,16 +19,21 @@ class ConfigDefinition(object):
 
     def __init__(self):
         with open(DEFINITION, 'r') as y:
-            self.defn = yaml.load(y)
+            defn = yaml.load(y)
             
+        if 'pipeline-definition' not in defn:
+            raise ConfigException('The configuration definition is not valid')
+        
+        self.defn = defn['pipeline-definition']
+         
         # This will throw an error if the schema itself is invalid otherwise it just validate everything.
         try:
-            validate([], self.defn)
+            Draft4Validator.check_schema(self.defn)
         except SchemaError:
             raise
 #             raise Exception('The pipeline configuration schema is invalid. Contact Research Computing.')
         except ValidationError:
-            pass
+            raise
         
         self.validator = Draft4Validator(self.defn)
         
@@ -36,5 +41,9 @@ class ConfigDefinition(object):
     def isValid(self, config):
         return self.validator.is_valid(config)
     
-    def validationErrors(self, config):
-        return sorted(self.validator.iter_errors(config), key=str)
+    def validationError(self, config):
+        errors = sorted(self.validator.iter_errors(config), key=str)
+        if errors is None or len(errors) == 0:
+            return ''
+        return str(errors[0])
+        

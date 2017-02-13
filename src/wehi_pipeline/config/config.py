@@ -24,7 +24,14 @@ class Config(object):
         self.defn = ConfigDefinition()
         
         with open(fileName) as c:
-            self.config = yaml.load(c)
+            config = yaml.load(c)
+            
+        if 'pipeline-definition' not in config:
+            raise ConfigException('Configuration is not for a pipeline.')
+        self.config = config['pipeline-definition']
+        
+        if not self.isValid():
+            raise ConfigException('Config is not valid: ' + self.validationError())
             
         self._pathSymbols = self._symbolMapFor('destinations', DestinationSymbol)
         self._referenceSymbols = self._symbolMapFor('references', ReferenceSymbol)
@@ -37,8 +44,8 @@ class Config(object):
                 sns.add(sn)
                 
         
-    def validationErrors(self):
-        return self.errors
+    def validationError(self):
+        return self.defn.validationError(self.config)
     
     def isValid(self):
         return self.defn.isValid(self.config)
@@ -54,12 +61,12 @@ class Config(object):
             
     def _symbolMapFor(self, symbolType, symbolConstructor):
         
-        if symbolType not in self.config['pipeline-definition']:
-            return None
-        
         paths = dict()
         
-        for symbol in self.config['pipeline-definition'][symbolType]:
+        if symbolType not in self.config:
+            return paths
+        
+        for symbol in self.config[symbolType]:
             name = symbol['name']
             if name in paths:
                 raise ConfigException(symbolType + ' ' + name + ' is multiply defined.')
@@ -78,18 +85,15 @@ class Config(object):
     def steps(self):
         steps = []
         
-        for step in self.config['pipeline-definition']['steps']:
+        for step in self.config['steps']:
             steps.append(stepFactory(step))
             
         return steps
 
 
 if __name__ == '__main__':
-    c = Config('f.yaml')
+    c = Config('test-pipeline.yaml')
     
-    if not c.isValid():
-        print c.validationErrors()[0]
-        
     j = Job()
     j.context = WorkflowContext('forwardO', 'backwardO', 'sampleO', '/tmp', c.steps())
     
