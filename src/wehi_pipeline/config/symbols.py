@@ -8,6 +8,7 @@ import re
 import subprocess
 
 from wehi_pipeline.toil_support.pipeline_file import PipeLineBAMFile, PipeLineFile
+from wehi_pipeline.toil_support.utils import asList
 
 class AbstractSymbol(object):
     
@@ -223,3 +224,41 @@ def _replaceTokens(cmd, tokens):
             cmd = re.sub('\$'+token, value, cmd)
 
     return cmd
+
+
+def _isEmpty(thing):
+    if thing is None:
+        return True
+    if type(thing) is list:
+        return len(thing) == 0
+    return False
+
+def resolveSymbols(job, commands, config, stepConfig):
+    
+    if _isEmpty(commands):
+        return (None, None)
+    
+    commands = asList(commands)
+    
+    processedCommands = []
+    outFiles = []
+    for cmd in commands:
+        (processedCommand, fs) = resolveString(job, cmd, config, stepConfig)
+        processedCommands.append(processedCommand)
+        outFiles = outFiles + fs
+        
+    return (processedCommand, outFiles)
+
+def resolveString(job, cmd, config, stepConfig):
+
+    knownFiles = job.context.knownFiles
+    cmd = evaluate(job, cmd, [config, stepConfig.symbols(), knownFiles])
+
+    outputFiles = []    
+    for symbol in stepConfig.symbols():
+        if type(symbol) is Output:
+            outputFiles.append(symbol.pipeLineFile())
+            knownFiles.append(symbol)
+            
+            
+    return (cmd, outputFiles)

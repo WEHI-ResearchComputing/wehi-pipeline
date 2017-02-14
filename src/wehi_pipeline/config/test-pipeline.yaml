@@ -50,7 +50,7 @@ pipeline-definition:
         modules:
           - picard
 
-    - generic:
+    - dummy-file:
         name: step2
-        commands:
-          - echo hello
+        file-name: /Users/thomas.e/x
+        content: 'Hello file\n'

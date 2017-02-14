@@ -21,10 +21,10 @@ class ConfigDefinition(object):
         with open(DEFINITION, 'r') as y:
             defn = yaml.load(y)
             
-        if 'pipeline-definition' not in defn:
+        try:
+            self.defn = defn['definitions']['pipeline-definition']
+        except KeyError:
             raise ConfigException('The configuration definition is not valid')
-        
-        self.defn = defn['pipeline-definition']
          
         # This will throw an error if the schema itself is invalid otherwise it just validate everything.
         try:
