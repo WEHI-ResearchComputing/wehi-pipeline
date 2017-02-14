@@ -5,10 +5,9 @@ Created on 6Feb.,2017
 '''
 
 from wehi_pipeline.toil_support.utils import asList
-from wehi_pipeline.config.symbols import resolveSymbols
 
-from wehi_pipeline.config.symbols import PreCommand        
 from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.config.symbols import PreCommand, resolveSymbols
     
 class GenericStep(JobStep):
     

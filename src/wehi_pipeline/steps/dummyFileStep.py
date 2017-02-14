@@ -27,14 +27,14 @@ class DummyFile(JobStep):
             if self._content is not None:
                 strings.append(self._content)
                 
-            (strings, _) = resolveSymbols(job, strings, None)
+            (strings, _) = resolveSymbols(job, strings, None, self)
             
             if self._content == None:
                 cmd = 'touch ' + strings[0]
-                execute(cmd, cmd, None)
+                execute(job, cmd, None)
             else:
                 cmd = 'echo ' + strings[1]
-                execute(cmd, cmd, None, outfn=strings[0])
+                execute(job, cmd, None, outfn=strings[0])
                 
             print(strings[0] + ' ' + strings[1])
         

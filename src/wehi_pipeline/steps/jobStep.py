@@ -3,8 +3,8 @@ Created on 14Feb.,2017
 
 @author: thomas.e
 '''
-
 from wehi_pipeline.config.symbols import Output
+
 
 class JobStep(object):
 

@@ -5,6 +5,7 @@ Created on 14Feb.,2017
 '''
 from wehi_pipeline.config import ConfigException
 from wehi_pipeline.steps.genericStep import GenericStep
+from wehi_pipeline.steps.dummyFileStep import DummyFile
 
 
 _step_registry = {

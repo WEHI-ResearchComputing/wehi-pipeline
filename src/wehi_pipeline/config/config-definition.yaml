@@ -121,19 +121,14 @@ definitions:
 
             dummy-file:
               type: object
-              required: [name, file]
+              required: [name, file-name]
               properties:
                 name:
                   type: string
-
-                file:
-                  type: object
-                  required: [file-name]
-                  properties:
-                    file-name:
-                      type: string
-                    content:
-                      type: string
+                file-name:
+                  type: string
+                content:
+                  type: string
 
               outputs:
                 $ref: "#/definitions/outputs"

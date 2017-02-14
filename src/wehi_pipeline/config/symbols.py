@@ -199,6 +199,8 @@ def evaluate(job, s, tables):
     
     tokens = dict()
     for table in tables:
+        if table is None:
+            continue
         for symbol in table:
             symbol.updateTokens(tokens)
             tokens[symbol.name()] = symbol.value(job)
@@ -247,18 +249,21 @@ def resolveSymbols(job, commands, config, stepConfig):
         processedCommands.append(processedCommand)
         outFiles = outFiles + fs
         
-    return (processedCommand, outFiles)
+    return (processedCommands, outFiles)
 
 def resolveString(job, cmd, config, stepConfig):
 
     knownFiles = job.context.knownFiles
-    cmd = evaluate(job, cmd, [config, stepConfig.symbols(), knownFiles])
+    stepSymbols = stepConfig.symbols()
+    
+    cmd = evaluate(job, cmd, [config, stepSymbols, knownFiles])
 
-    outputFiles = []    
-    for symbol in stepConfig.symbols():
-        if type(symbol) is Output:
-            outputFiles.append(symbol.pipeLineFile())
-            knownFiles.append(symbol)
+    outputFiles = []
+    if stepSymbols is not None:
+        for symbol in stepConfig.symbols():
+            if type(symbol) is Output:
+                outputFiles.append(symbol.pipeLineFile())
+                knownFiles.append(symbol)
             
             
     return (cmd, outputFiles)

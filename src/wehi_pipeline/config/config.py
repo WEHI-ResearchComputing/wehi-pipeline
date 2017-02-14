@@ -5,11 +5,11 @@ Created on 3Feb.,2017
 '''
 import yaml
 from wehi_pipeline.config.definition import ConfigDefinition
-from wehi_pipeline.steps.jobStep import stepFactory
 from wehi_pipeline.config import ConfigException
 from wehi_pipeline.config.symbols import DestinationSymbol, ReferenceSymbol
 from toil.job import Job
 from wehi_pipeline.toil_support.context import WorkflowContext
+from wehi_pipeline.steps.jobStepFactory import stepFactory
 
 class Config(object):
     '''
