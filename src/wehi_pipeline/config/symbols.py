@@ -267,3 +267,13 @@ def resolveString(job, cmd, config, stepConfig):
             
             
     return (cmd, outputFiles)
+
+def findOutputFile(job, name):
+    
+    knownFiles = job.context.knownFiles
+    
+    for knownFile in knownFiles:
+        if knownFile.name() == name:
+            return knownFile
+        
+    return None

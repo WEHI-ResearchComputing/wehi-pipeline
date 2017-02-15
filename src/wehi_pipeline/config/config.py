@@ -91,7 +91,7 @@ class Config(object):
         return steps
 
 if __name__ == '__main__':
-    c = Config('test-pipeline.yaml')
+    c = Config('../../../test/configs/mn.yaml')
     
     j = Job()
     j.context = WorkflowContext('forwardO', 'backwardO', 'sampleO', '/tmp', c.steps())

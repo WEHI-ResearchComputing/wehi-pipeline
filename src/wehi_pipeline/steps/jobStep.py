@@ -23,6 +23,9 @@ class JobStep(object):
         
     def outputs(self):
         return self._outputs
+    
+    def symbols(self):
+        return self._outputs
 
     def function(self):
         raise Exception('function is no implemented.')

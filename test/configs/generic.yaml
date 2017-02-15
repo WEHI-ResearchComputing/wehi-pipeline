@@ -54,5 +54,3 @@ pipeline-definition:
         name: step2
         file-name: /Users/thomas.e/x
         content: 'Hello file\n'
-        commands:
-          - echo hello

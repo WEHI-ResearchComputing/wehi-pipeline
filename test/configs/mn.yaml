@@ -1,0 +1,37 @@
+pipeline-definition:
+
+  name: micronuclei
+  description: Determine chromosomal makeup of micronuclei
+
+  references:
+    - name: hg38
+      path: /wehisan/bioinf/bioinf-data/Papenfuss_lab/projects/reference_genomes/human_new/hg38.fa
+
+  fastqs:
+    pattern: $sample_$direction.fastq.gz
+    path: /wehisan/bioinf/bioinf-data/Papenfuss_lab/projects/micronuclei
+
+  destinations:
+    - name: results
+      path: /home/thomas.e/mnWork/results
+
+  steps:
+    - trim:
+        trimmer: trimmomatic
+
+    - align:
+        reference: $hg38
+
+    - sort:
+
+    - gridss:
+        outputs:
+          - name: bed-file
+            destination: $results
+            filename: $sample.bedpe
+          - name: filtered-bed-file
+            destination: $results
+            filename: $sample.filtered.bedpe
+          - name: vcf
+            destination: $results
+            filename: $sample.vcf

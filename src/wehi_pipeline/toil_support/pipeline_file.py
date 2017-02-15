@@ -91,12 +91,23 @@ class PipeLineFile(object):
         self.destDir = destDir
         self.shareWith = shareDirectoryWith
         
+        if hasattr(job, 'fileStore'):
+            self._fs = job.fileStore
+        else:
+            self._fs = None
+            
+    def _tempDir(self):
+        if self._fs is None:
+            return '.'
+        else:
+            return self._fs.getLocalTempFile()
+        
     def create(self):
         if self.fileName is None:
-            self._path =  self.job.fileStore.getLocalTempFile()
+            self._path =  self._tempDir()
         else:
             if self.shareWith is None:
-                outdir = self.job.fileStore.getLocalTempDir()
+                outdir = self._tempDir()
             else:
                 outdir = self.shareWith.dir()
             self._path = os.path.join(outdir, self.fileName)
@@ -109,11 +120,11 @@ class PipeLineFile(object):
         fid = files[self.fileKey]
         
         if self.fileName is None:
-            self._path = self.job.fileStore.readGlobalFile(fid)
+            self._path = self._fs.readGlobalFile(fid)
         else:
-            outDir = self.job.fileStore.getLocalTempDir()
+            outDir = self._tempDir()
             self._path = os.path.join(outDir, self.fileName)
-            self.job.fileStore.readGlobalFile(fid, self._path)
+            self._fs.readGlobalFile(fid, self._path)
             
         return self._path
         

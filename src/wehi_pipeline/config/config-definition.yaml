@@ -135,3 +135,33 @@ definitions:
               precommands:
                 $ref: "#/definitions/precommands"
 
+            trim:
+              type: object
+              properties:
+                name:
+                  type: string
+                trimmer:
+                  type: string
+
+            align:
+              type: object
+              properties:
+                name:
+                  type: string
+                reference:
+                  type: string
+
+            sort:
+              type: object
+              properties:
+                name:
+                  type: string
+
+            gridss:
+              type: object
+              properties:
+                name:
+                  type: string
+              outputs:
+                $ref: "#/definitions/outputs"
+
