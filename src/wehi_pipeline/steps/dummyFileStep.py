@@ -3,12 +3,12 @@ Created on 14Feb.,2017
 
 @author: thomas.e
 '''
-from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.toil_support.utils import execute
 from wehi_pipeline.config.symbols import resolveSymbols
 
 
-class DummyFile(JobStep):
+class DummyFile(ConfigJobStep):
 
     def __init__(self, config):
         super(DummyFile, self).__init__(config)

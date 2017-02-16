@@ -10,6 +10,7 @@ from wehi_pipeline.config.symbols import DestinationSymbol, ReferenceSymbol
 from toil.job import Job
 from wehi_pipeline.toil_support.context import WorkflowContext
 from wehi_pipeline.steps.jobStepFactory import stepFactory
+from wehi_pipeline.config.fastqs import Fastqs
 
 class Config(object):
     '''
@@ -21,14 +22,14 @@ class Config(object):
         Constructor
         '''
             
-        self.defn = ConfigDefinition()
+        self._defn = ConfigDefinition()
         
         with open(fileName) as c:
             config = yaml.load(c)
             
         if 'pipeline-definition' not in config:
             raise ConfigException('Configuration is not for a pipeline.')
-        self.config = config['pipeline-definition']
+        self._config = config['pipeline-definition']
         
         if not self.isValid():
             raise ConfigException('Config is not valid: ' + self.validationError())
@@ -43,12 +44,22 @@ class Config(object):
                     raise ConfigException('The symbol ' + sn + ' is multiply defined.')
                 sns.add(sn)
                 
+        self._fastqs = Fastqs(self._config['fastqs'])        
+                
+    def fastqs(self):
+        return self._fastqs.fastqs()
         
+    def name(self):
+        return self._config['name']
+    
+    def description(self):
+        return self._config['description'] if 'description' in self._config else None
+    
     def validationError(self):
-        return self.defn.validationError(self.config)
+        return self._defn.validationError(self._config)
     
     def isValid(self):
-        return self.defn.isValid(self.config)
+        return self._defn.isValid(self._config)
     
     def pathSymbolMap(self):
         return self._pathSymbols
@@ -63,10 +74,10 @@ class Config(object):
         
         paths = dict()
         
-        if symbolType not in self.config:
+        if symbolType not in self._config:
             return paths
         
-        for symbol in self.config[symbolType]:
+        for symbol in self._config[symbolType]:
             name = symbol['name']
             if name in paths:
                 raise ConfigException(symbolType + ' ' + name + ' is multiply defined.')
@@ -85,7 +96,7 @@ class Config(object):
     def steps(self):
         steps = []
         
-        for step in self.config['steps']:
+        for step in self._config['steps']:
             steps.append(stepFactory(step))
             
         return steps

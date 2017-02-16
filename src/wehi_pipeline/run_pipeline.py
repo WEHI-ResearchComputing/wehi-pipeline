@@ -4,7 +4,11 @@ Created on 6Feb.,2017
 @author: thomas.e
 '''
 
+HOST = '10.1.17.158'
+import pydevd
+
 import argparse
+import os
 import sys
 
 from toil.common import Toil
@@ -12,23 +16,38 @@ from toil.job import Job
 import logging
 
 from wehi_pipeline.config.config import Config
+from wehi_pipeline.toil_support.context import WorkflowContext
 
-def getOptions(name):
-    parser = argparse.ArgumentParser(name, formatter_class=argparse.RawTextHelpFormatter)
+TMPBASE = os.path.join(os.getenv('HOME'), 'tmp')
+
+def getOptions():
+    parser = argparse.ArgumentParser('python run_pipeline', formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('--touchOnly', dest='touchOnly', action="store_true", default=False, help='Files are only touched, programs are not executed.')
+    parser.add_argument('--config', dest='config', type=str, help='The pipeline definition in YAML format')
     Job.Runner.addToilOptions(parser)
 
-    options = parser.parse_args(args=['wehi-pipeline'])
+    args = sys.argv[1:] + ['wehi-pipeline']
+    options = parser.parse_args(args=args)
     options.disableCaching = True
-        
-def makeLaunchJob(touchOnly):
-    contexts = []#getContextList(touchOnly)
     
-    if contexts is None:
+    return options
+        
+def makeLaunchJob(config):
+        
+    fqs = config.fastqs()
+    if len(fqs) == 0:
+        logging.info('No input files')
         return None
+ 
+    contexts = []
+    for fq in fqs:
+        contexts.append(WorkflowContext(fq.forward(), fq.backward(), fq.sample(), TMPBASE, None))
 
     mj = Job()
-    startFunction = None #steps[0].function
+    steps = config.steps()
+    step = steps[0]
+    startFunction = step.wrappedFunction()
+    
     for context in contexts:
         nj = mj.addChildJobFn(startFunction)
         nj.context = context
@@ -36,8 +55,11 @@ def makeLaunchJob(touchOnly):
     return mj
 
 def main():
-    configFile = sys.argv[1]
+    pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
+        
+    options = getOptions()
     
+    configFile = options.config
     config = Config(configFile)
     
     if not config.isValid():
@@ -45,9 +67,8 @@ def main():
         print config.validationErrors()[0]
         sys.exit(1)
         
-    options = getOptions(config.name())
-    
-    mj = makeLaunchJob(options.touchOnly)
+
+    mj = makeLaunchJob(config)
     if mj is None:
         return
     

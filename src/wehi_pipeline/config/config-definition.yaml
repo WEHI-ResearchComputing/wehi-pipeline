@@ -152,7 +152,7 @@ definitions:
                   type: string
 
             sort:
-              type: object
+              type: [object, "null"]
               properties:
                 name:
                   type: string

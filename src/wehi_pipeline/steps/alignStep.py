@@ -3,13 +3,14 @@ Created on 15Feb.,2017
 
 @author: thomas.e
 '''
-from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.config.symbols import resolveSymbols, findOutputFile
+from wehi_pipeline.toil_support.utils import execute
 
 BWA = 'bwa'
 NP_THREADS = 8
 
-class Align(JobStep):
+class Align(ConfigJobStep):
 
     def __init__(self, config):
             
@@ -33,12 +34,9 @@ class Align(JobStep):
             cmd = BWA + ' mem -t ' + str(NP_THREADS) + ' $ref $forward $backward'
             (cmd, outputFiles) = resolveSymbols(job, cmd, self.symbols(), self)
             
-            print(cmd)
-            
             alignedFile = findOutputFile(job, 'aligned')
-            print(alignedFile.path())
             
-            # execute(job, cmd, outputFiles, outfn=alignedFile.path()) 
+            execute(job, cmd, outputFiles, outfn=alignedFile.path()) 
             
         return f
             

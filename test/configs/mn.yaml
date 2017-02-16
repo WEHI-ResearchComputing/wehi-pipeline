@@ -8,7 +8,7 @@ pipeline-definition:
       path: /wehisan/bioinf/bioinf-data/Papenfuss_lab/projects/reference_genomes/human_new/hg38.fa
 
   fastqs:
-    pattern: $sample_$direction.fastq.gz
+    pattern: (?P<sample>[0-9A-Z]{9,9}_[0-9])_.*_Homo-sapiens__R_160728_LIZCAL_DNA_M001_R(?P<direction>[12]).fastq.gz
     path: /wehisan/bioinf/bioinf-data/Papenfuss_lab/projects/micronuclei
 
   destinations:

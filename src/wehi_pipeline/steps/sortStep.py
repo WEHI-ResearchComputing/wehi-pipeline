@@ -3,17 +3,21 @@ Created on 15Feb.,2017
 
 @author: thomas.e
 '''
-from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.config.symbols import resolveSymbols, findOutputFile
+from wehi_pipeline.toil_support.utils import execute
 
 SAM = 'sam'
 NP_THREADS = 8
 
 
-class Sort(JobStep):
+class Sort(ConfigJobStep):
 
 
     def __init__(self, config):
+        
+        if config is None:
+            config = dict()
                     
         if 'name' not in config:
             config['name'] = 'trim'
@@ -44,8 +48,6 @@ class Sort(JobStep):
             alignedFile = findOutputFile('aligned')
             sortedFile = findOutputFile('sorted')
             
-            print(sortedFile.path())
-            print(alignedFile.path())
-            #                 execute(job, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path())
+            execute(job, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path())
                 
         return f

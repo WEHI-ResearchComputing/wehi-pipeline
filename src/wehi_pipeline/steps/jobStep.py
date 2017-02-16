@@ -4,9 +4,10 @@ Created on 14Feb.,2017
 @author: thomas.e
 '''
 from wehi_pipeline.config.symbols import Output
+import logging
 
 
-class JobStep(object):
+class ConfigJobStep(object):
 
     def __init__(self, config):
         self._config = config
@@ -28,5 +29,33 @@ class JobStep(object):
         return self._outputs
 
     def function(self):
-        raise Exception('function is no implemented.')
+        raise Exception('function is not implemented.')
+    
+    def _nextStep(self):
         
+        steps = self._config.steps()
+        n = len(steps)
+        for i in range(n):
+            if steps[i].name() == self._name:
+                if i < n-1:
+                    return steps[i]
+                
+        return None
+        
+    def wrappedFunction(self):
+        
+        def wf(job):
+            self.function()(job)
+            
+            logging.info('Finished step:' + str(self._name))
+
+            nextStep = self._nextStep()
+            if nextStep == None:
+                return
+
+            logging.info('Launching step: ' + nextStep.name())
+            nj = job.addChildJobFn(self.wrappedFunction(nextStep.function()))
+            nj.context = job.context
+            
+            
+        return wf

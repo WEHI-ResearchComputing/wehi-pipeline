@@ -3,13 +3,14 @@ Created on 15Feb.,2017
 
 @author: thomas.e
 '''
-from wehi_pipeline.steps.jobStep import JobStep
-from wehi_pipeline.config.symbols import resolveSymbols, findOutputFile
+from wehi_pipeline.steps.jobStep import ConfigJobStep
+from wehi_pipeline.config.symbols import resolveSymbols
+from wehi_pipeline.toil_support.utils import execute
 
 GRIDSS = 'gridss'
 NP_THREADS = 8
 
-class Gridss(JobStep):
+class Gridss(ConfigJobStep):
 
 
     def __init__(self, config):
@@ -33,10 +34,6 @@ class Gridss(JobStep):
             
             (cmd, outputFiles) = resolveSymbols(job, cmd, self.symbols(), self)
             
-            print(cmd)
+            execute(job, cmd, outputFiles)
     
-    #                 execute(job, cmd, outputFiles)
-    
-            
-        
         return f

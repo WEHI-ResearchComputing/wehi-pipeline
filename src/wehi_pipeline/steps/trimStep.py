@@ -6,7 +6,7 @@ Created on 15Feb.,2017
 
 import os
 
-from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.toil_support.utils import execute
 from wehi_pipeline.config.symbols import resolveSymbols, findOutputFile
 from wehi_pipeline.config import ConfigException
@@ -15,7 +15,7 @@ TRIMMOMATIC = 'trimmomatic'
 NP_THREADS = 8
 ADAPTORS = 'ILLUMINACLIP:/stornext/System/data/apps/trimmomatic/trimmomatic-0.36/adapters/TruSeq3-PE.fa:1:30:20:4:true'
 
-class Trim(JobStep):
+class Trim(ConfigJobStep):
 
     def __init__(self, config):
             
@@ -59,9 +59,7 @@ class Trim(JobStep):
             
             cmd = cmd[0] + ' -baseout ' + baseOut + ' ' + adaptors
             
-            print(cmd)
-
-#                 execute(job, cmd, outputFiles)
+            execute(job, cmd, outputFiles)
                 
         return f
 

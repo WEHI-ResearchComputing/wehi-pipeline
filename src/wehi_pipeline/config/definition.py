@@ -5,12 +5,13 @@ Created on 3Feb.,2017
 '''
 
 import yaml
+import os
 from jsonschema.validators import Draft4Validator
 from jsonschema.exceptions import ValidationError
 from jsonschema.exceptions import SchemaError
 from wehi_pipeline.config import ConfigException
 
-DEFINITION = 'config-definition.yaml'
+DEFINITION = os.path.join(os.path.dirname(__file__), 'config-definition.yaml')
 
 class ConfigDefinition(object):
     '''

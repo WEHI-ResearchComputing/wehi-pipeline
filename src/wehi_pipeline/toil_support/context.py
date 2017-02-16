@@ -12,7 +12,6 @@ class WorkflowContext(object):
     This class transports context information between steps of an individual workflow
     '''
 
-
     def __init__(self, forward, backward, identifier, tmpBase, steps):
         self.forward = forward
         self.backward = backward

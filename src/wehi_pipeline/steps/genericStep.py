@@ -6,10 +6,10 @@ Created on 6Feb.,2017
 
 from wehi_pipeline.toil_support.utils import asList
 
-from wehi_pipeline.steps.jobStep import JobStep
+from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.config.symbols import PreCommand, resolveSymbols
     
-class GenericStep(JobStep):
+class GenericStep(ConfigJobStep):
     
     def __init__(self, config):
         super(GenericStep, self).__init__(config)
