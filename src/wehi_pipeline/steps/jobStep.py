@@ -3,9 +3,10 @@ Created on 14Feb.,2017
 
 @author: thomas.e
 '''
+
+from wehi_pipeline.toil_support.utils import asList
 from wehi_pipeline.config.symbols import Output
 import logging
-
 
 class ConfigJobStep(object):
 
@@ -18,7 +19,12 @@ class ConfigJobStep(object):
             outputs = self._config['outputs']
             for o in outputs:
                 self._outputs.append(Output(o))
-        
+
+        if 'modules' in config:
+            self._modules = asList(config['modules'])
+        else:
+            self._modules = []
+                
     def name(self):
         return self._name
         
@@ -31,31 +37,26 @@ class ConfigJobStep(object):
     def function(self):
         raise Exception('function is not implemented.')
     
-    def _nextStep(self):
+    def setNextStep(self, step):
+        self._nextStep = step
         
-        steps = self._config.steps()
-        n = len(steps)
-        for i in range(n):
-            if steps[i].name() == self._name:
-                if i < n-1:
-                    return steps[i]
-                
-        return None
+    def nextStep(self):
+        return self._config['next-step'] if 'next-step' in self._config else None
         
-    def wrappedFunction(self):
-        
-        def wf(job):
-            self.function()(job)
-            
-            logging.info('Finished step:' + str(self._name))
+def wehiWrapper(job, step=None):
+    HOST = '10.1.17.158'
+    import pydevd
+    pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
 
-            nextStep = self._nextStep()
-            if nextStep == None:
-                return
+    step.function()(job)
+    
+    logging.info('Finished step:' + step.name())
 
-            logging.info('Launching step: ' + nextStep.name())
-            nj = job.addChildJobFn(self.wrappedFunction(nextStep.function()))
-            nj.context = job.context
-            
-            
-        return wf
+    nextStep = step.nextStep()
+    if nextStep == None:
+        return
+    
+    logging.info('Launching step: ' + nextStep.name())
+    
+    nj = job.addChildJobFn(wehiWrapper, step=nextStep)
+    nj.context = job.context

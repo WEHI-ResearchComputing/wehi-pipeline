@@ -19,6 +19,7 @@ import logging
 from wehi_pipeline.toil_support.jobStep import childrenOf
 from wehi_pipeline.toil_support.jobStep import followersOf
 from wehi_pipeline.toil_support.logger import StreamLogger
+from wehi_pipeline.toil_support.shellModules import addModules
 
 
 def tempDir(job):
@@ -66,7 +67,7 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-def execute(job, cmds, pipeLineFiles, outfn=None, infn=None):
+def execute(job, cmds, pipeLineFiles, outfn=None, infn=None, modules=None):
     
     touchOnly = job.context.touchOnly
     
@@ -91,7 +92,7 @@ def execute(job, cmds, pipeLineFiles, outfn=None, infn=None):
             touch(f.path())
     else:
         try:
-            osExecutor(cmds, outfh, infh)
+            osExecutor(cmds, outfh, infh, modules)
         except Exception as exc:
                 closeStream(outfh)            
                 closeStream(infh)
@@ -111,7 +112,7 @@ def closeStream(stream):
         pass
     
                             
-def osExecutor(cmds, outfh=None, infh=None):
+def osExecutor(cmds, outfh=None, infh=None, modules=None):
     '''
     Execute a one or more commands in a pipe
     '''
@@ -145,13 +146,15 @@ def osExecutor(cmds, outfh=None, infh=None):
             bufsize = 0
             outStream = subprocess.PIPE
             
+        env = addModules(modules)
         cmdBits = shlex.split(cmd)
         cmdName = cmdBits[0]
         sp = subprocess.Popen(cmdBits, 
                           bufsize=bufsize,
                           stdout=outStream, 
                           stderr=subprocess.PIPE,
-                          stdin=inStream
+                          stdin=inStream,
+                          env=env
                           )
         sp.cmdName = cmdName
         

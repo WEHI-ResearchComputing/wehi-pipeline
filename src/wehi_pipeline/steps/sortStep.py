@@ -48,6 +48,6 @@ class Sort(ConfigJobStep):
             alignedFile = findOutputFile('aligned')
             sortedFile = findOutputFile('sorted')
             
-            execute(job, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path())
+            execute(job, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path(), modules=['samtools'])
                 
         return f

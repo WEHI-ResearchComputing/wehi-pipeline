@@ -128,6 +128,7 @@ class Output(AbstractSymbol):
         self._filename    = config['filename'] if 'filename' in config else None
         self._destination = config['destination'] if 'destination' in config else None
         self._fileKey = self._name if self._destination is None else None
+        self._shareWith = config['share-directory-with'] if 'share-directory-with' in config else None
         
         self._created = False
         self._resolved = False
@@ -138,9 +139,24 @@ class Output(AbstractSymbol):
         self._resolved = True
         
         if self._type == 'regular':
-            self._plFile = PipeLineFile(job, fileKey=self._fileKey, destDir=self._destination, fileName=self._filename)
+            
+            if self._shareWith is None:
+                sw = None
+            else:
+                sw = findOutputFile(job, self._shareWith)
+                
+            self._plFile = PipeLineFile(job, 
+                                        fileKey=self._fileKey, 
+                                        destDir=self._destination, 
+                                        fileName=self._filename, 
+                                        shareDirectoryWith=sw
+                                        )
         else:
-            self._plFile = PipeLineBAMFile(job, fileKey=self._fileKey, destDir=self._destination, fileName=self._filename)
+            self._plFile = PipeLineBAMFile(job,
+                                           fileKey=self._fileKey, 
+                                           destDir=self._destination, 
+                                           fileName=self._filename
+                                           )
             
         if self._created:
             self._plFile.retrieve()
@@ -159,7 +175,7 @@ class Output(AbstractSymbol):
     def updateTokens(self, tokens):
         self._destination = _replaceTokens(self._destination, tokens)
         self._filename = _replaceTokens(self._filename, tokens)
-    
+        
     def pipeLineFile(self):
         return self._plFile
     
@@ -204,6 +220,8 @@ def evaluate(job, s, tables):
         for symbol in table:
             symbol.updateTokens(tokens)
             tokens[symbol.name()] = symbol.value(job)
+            if type(symbol) is Output:
+                job.context.knownFiles[symbol.name()] = symbol
             
     return _replaceTokens(s, tokens)
 
@@ -256,24 +274,19 @@ def resolveString(job, cmd, config, stepConfig):
     knownFiles = job.context.knownFiles
     stepSymbols = stepConfig.symbols()
     
-    cmd = evaluate(job, cmd, [config, stepSymbols, knownFiles])
+    cmd = evaluate(job, cmd, [config, stepSymbols, knownFiles.values()])
 
     outputFiles = []
     if stepSymbols is not None:
         for symbol in stepConfig.symbols():
             if type(symbol) is Output:
                 outputFiles.append(symbol.pipeLineFile())
-                knownFiles.append(symbol)
             
             
     return (cmd, outputFiles)
 
 def findOutputFile(job, name):
-    
-    knownFiles = job.context.knownFiles
-    
-    for knownFile in knownFiles:
-        if knownFile.name() == name:
-            return knownFile
-        
-    return None
+    o = job.context.knownFiles[name]
+    if o is None:
+        return None
+    return o.pipeLineFile()

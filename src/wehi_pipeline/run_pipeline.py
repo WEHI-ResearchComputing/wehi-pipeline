@@ -3,6 +3,7 @@ Created on 6Feb.,2017
 
 @author: thomas.e
 '''
+from wehi_pipeline.steps.jobStep import wehiWrapper
 
 HOST = '10.1.17.158'
 import pydevd
@@ -44,12 +45,10 @@ def makeLaunchJob(config):
         contexts.append(WorkflowContext(fq.forward(), fq.backward(), fq.sample(), TMPBASE, None))
 
     mj = Job()
-    steps = config.steps()
-    step = steps[0]
-    startFunction = step.wrappedFunction()
+    firstStep = config.steps()[0]
     
     for context in contexts:
-        nj = mj.addChildJobFn(startFunction)
+        nj = mj.addChildJobFn(wehiWrapper, step=firstStep)
         nj.context = context
         
     return mj

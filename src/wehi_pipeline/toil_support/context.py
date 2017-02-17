@@ -19,7 +19,7 @@ class WorkflowContext(object):
         self.tmpBase = tmpBase
         self.touchOnly = False
         self.steps = steps
-        self.knownFiles = []
+        self.knownFiles = dict()
         
     def setTouchOnly(self, touchOnly):
         self.touchOnly = touchOnly

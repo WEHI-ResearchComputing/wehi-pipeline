@@ -33,7 +33,8 @@ class Trim(ConfigJobStep):
             {
             'name' :  'trimmed-backward',
             'destination' : '$temp-dir',
-            'filename' : 'trimmed_2P.fastq.gz' 
+            'filename' : 'trimmed_2P.fastq.gz',
+            'share-directory-with' : 'trimmed-forward'
             }
                    ]
         
@@ -49,17 +50,17 @@ class Trim(ConfigJobStep):
     def function(self):
         def f(job):
             
-            cmd = self._trimmer + ' PE -threads ' + str(NP_THREADS) + ' $forward  $backward' 
+            cmd = 'sh ' + self._trimmer + ' PE -threads ' + str(NP_THREADS) + ' $forward  $backward' 
             (cmd, outputFiles) = resolveSymbols(job, cmd, self.symbols(), self)
             
-            anOutput = findOutputFile(job, 'trimmed-forward')
+            anOutput = findOutputFile(job, 'trimmed-backward')
             baseOut = os.path.join(os.path.dirname(anOutput.path()), 'trimmed.fastq.gz')
             
             adaptors = self._getAdaptors()
             
             cmd = cmd[0] + ' -baseout ' + baseOut + ' ' + adaptors
             
-            execute(job, cmd, outputFiles)
+            execute(job, cmd, outputFiles, modules=['trimmomatic'])
                 
         return f
 

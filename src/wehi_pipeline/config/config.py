@@ -45,6 +45,17 @@ class Config(object):
                 sns.add(sn)
                 
         self._fastqs = Fastqs(self._config['fastqs'])        
+
+        self._steps = []
+        
+        previousStep = None
+        for step in self._config['steps']:
+            configStep = stepFactory(step)
+            self._steps.append(configStep)
+            if previousStep is not None:
+                previousStep.setNextStep(configStep)
+            previousStep = configStep
+            
                 
     def fastqs(self):
         return self._fastqs.fastqs()
@@ -94,12 +105,7 @@ class Config(object):
         return x
     
     def steps(self):
-        steps = []
-        
-        for step in self._config['steps']:
-            steps.append(stepFactory(step))
-            
-        return steps
+        return self._steps
 
 if __name__ == '__main__':
     c = Config('../../../test/configs/mn.yaml')

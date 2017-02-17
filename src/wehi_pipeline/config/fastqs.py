@@ -18,6 +18,9 @@ class Fastqs(object):
         self._path = config['path']
         
         self._pattern = config['pattern']
+        # Ensure whole file is matched
+        if self._pattern[-1] != '$':
+            self._pattern += '$'
         
         self._startAt = int(config['start-at']) if 'start-at' in config else 0
         self._finishAt = int(config['finish-at']) if 'finish-at' in config else sys.maxint
