@@ -44,7 +44,7 @@ class ConfigJobStep(object):
         return self._config['next-step'] if 'next-step' in self._config else None
         
 def wehiWrapper(job, step=None):
-    HOST = '10.1.17.158'
+    HOST = '10.1.17.64'
     import pydevd
     pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
 

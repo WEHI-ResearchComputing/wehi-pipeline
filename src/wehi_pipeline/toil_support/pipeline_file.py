@@ -100,7 +100,7 @@ class PipeLineFile(object):
         if self._fs is None:
             return '.'
         else:
-            return self._fs.getLocalTempFile()
+            return self._fs.getLocalTempDir()
         
     def create(self):
         if self.fileName is None:

@@ -5,8 +5,8 @@ Created on 6Feb.,2017
 '''
 from wehi_pipeline.steps.jobStep import wehiWrapper
 
-HOST = '10.1.17.158'
-import pydevd
+# HOST = '10.1.17.158'
+# import pydevd
 
 import argparse
 import os
@@ -54,7 +54,7 @@ def makeLaunchJob(config):
     return mj
 
 def main():
-    pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
+#     pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
         
     options = getOptions()
     
