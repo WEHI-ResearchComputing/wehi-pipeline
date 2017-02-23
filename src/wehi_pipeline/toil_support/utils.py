@@ -67,9 +67,9 @@ def touch(fname, times=None):
     with open(fname, 'a'):
         os.utime(fname, times)
 
-def execute(job, cmds, pipeLineFiles, outfn=None, infn=None, modules=None):
+def execute(context, cmds, pipeLineFiles, outfn=None, infn=None, modules=None):
     
-    touchOnly = job.context.touchOnly
+    touchOnly = context.touchOnly
     
     if pipeLineFiles is None:
         pipeLineFiles = []

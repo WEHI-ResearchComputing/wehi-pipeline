@@ -30,11 +30,13 @@ class GenericStep(ConfigJobStep):
         return self._outputs + self._preCommands
         
     def function(self):
-        def f(job):
+        def f(job, context):
             
-            (cmds, outputFiles) = resolveSymbols(job, self._commands, self.symbols(), self)
+            (cmds, outputFiles) = resolveSymbols(job, context, self._commands, self.symbols())
                 
-            execute(job, cmds, outputFiles, self._modules)
+            execute(context, cmds, outputFiles, self._modules)
+            
+            return context
             
         return f
 

@@ -7,7 +7,7 @@ from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.config.symbols import resolveSymbols, findOutputFile
 from wehi_pipeline.toil_support.utils import execute
 
-SAM = 'sam'
+SAM = 'samtools'
 NP_THREADS = 8
 
 
@@ -34,20 +34,20 @@ class Sort(ConfigJobStep):
         super(Sort, self).__init__(config)
 
     def function(self):
-        def f(job):
+        def f(job, context):
             
             sort = [
                 SAM + ' view -b -@ ' + str(NP_THREADS) + ' $aligned', 
                 SAM + ' sort -@ ' + str(NP_THREADS) + ' -'
                 ]
 
-            (sort, outputFiles) = resolveSymbols(job, sort, self.symbols(), self)
+            (sort, outputFiles) = resolveSymbols(job, context, sort, self.symbols())
             
-            print(sort)
+            alignedFile = findOutputFile(context, 'aligned')
+            sortedFile = findOutputFile(context, 'sorted')
             
-            alignedFile = findOutputFile('aligned')
-            sortedFile = findOutputFile('sorted')
+            execute(context, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path(), modules=self.modules())
             
-            execute(job, sort, outputFiles, outfn=sortedFile.path(), infn=alignedFile.path(), modules=['samtools'])
+            return context
                 
         return f

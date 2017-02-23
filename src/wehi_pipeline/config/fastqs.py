@@ -27,8 +27,6 @@ class Fastqs(object):
         
         self._fastqs = dict()
         
-        self._fastqs = dict()
-        
         for fn in os.listdir(self._path):
             m = re.match(self._pattern, fn)
             if m is None:

@@ -18,7 +18,7 @@ class AbstractSymbol(object):
     def name(self):
         return self._name
     
-    def value(self, job):
+    def value(self, job, context):
         raise NotImplemented
     
     def tokens(self):
@@ -33,7 +33,10 @@ class ValueSymbol(object):
         self._name = name
         self._value = value
     
-    def value(self):
+    def name(self):
+        return self._name
+    
+    def value(self, job, context):
         return self._value
     
     def tokens(self):
@@ -50,12 +53,10 @@ class BuiltInSymbol(AbstractSymbol):
         self._value = None
         self._resolved = False
         
-    def resolve(self, job):
+    def resolve(self, job, context):
         if self._resolved:
             return
         self._resolved = True
-        
-        context = job.context
         
         if self._name == 'temp-dir':
             self._value = context.getTempDir()
@@ -71,9 +72,9 @@ class BuiltInSymbol(AbstractSymbol):
         if self._name == 'backward':
             self._value = context.backward
 
-    def value(self, job):
+    def value(self, job, context):
         if not self._resolved:
-            self.resolve(job)
+            self.resolve(job, context)
         return self._value
         
     def tokens(self):
@@ -95,7 +96,7 @@ class DestinationSymbol(ValueSymbol):
         super(DestinationSymbol, self).__init__(name, path)
         self._path = path
         
-    def value(self):
+    def value(self, job, context):
         return self._path
     
     def tokens(self):
@@ -110,7 +111,7 @@ class ReferenceSymbol(ValueSymbol):
         super(ReferenceSymbol, self).__init__(name, path)
         self._path = path
     
-    def value(self, job):
+    def value(self, job, context):
         return self._path
     
     def tokens(self):
@@ -133,7 +134,7 @@ class Output(AbstractSymbol):
         self._created = False
         self._resolved = False
         
-    def resolve(self, job):
+    def resolve(self, job, context):
         if self._resolved:
             return
         self._resolved = True
@@ -143,7 +144,7 @@ class Output(AbstractSymbol):
             if self._shareWith is None:
                 sw = None
             else:
-                sw = findOutputFile(job, self._shareWith)
+                sw = findOutputFile(context, self._shareWith)
                 
             self._plFile = PipeLineFile(job, 
                                         fileKey=self._fileKey, 
@@ -164,9 +165,9 @@ class Output(AbstractSymbol):
             self._plFile.create()
             self._created = True
 
-    def value(self, job):
+    def value(self, job, context):
         if not self._resolved:
-            self.resolve(job)
+            self.resolve(job, context)
         return self._plFile.path()
     
     def tokens(self):
@@ -186,16 +187,16 @@ class PreCommand(AbstractSymbol):
         self._command = config['command']
         self._resolved = False
 
-    def resolve(self, job):
+    def resolve(self, job, context):
         if self._resolved:
             return
         pu = subprocess.check_output(self._command, shell=True) 
         self._value = pu.strip()
         self._resolved = True
        
-    def value(self, job):
+    def value(self, job, context):
         if not self._resolved:
-            self.resolve(job)
+            self.resolve(job, context)
         return self._value
     
     def tokens(self):
@@ -210,18 +211,17 @@ def findSymbol(token, tables):
             return table[token]
     return None
 
-def evaluate(job, s, tables):
+def evaluate(job, context, s, tables):
     tables.insert(0, builtInSymbols())
+    tables.insert(0, context.runSymbols)
     
     tokens = dict()
     for table in tables:
-        if table is None:
-            continue
         for symbol in table:
             symbol.updateTokens(tokens)
-            tokens[symbol.name()] = symbol.value(job)
+            tokens[symbol.name()] = symbol.value(job, context)
             if type(symbol) is Output:
-                job.context.knownFiles[symbol.name()] = symbol
+                context.knownFiles[symbol.name()] = symbol
             
     return _replaceTokens(s, tokens)
 
@@ -253,7 +253,7 @@ def _isEmpty(thing):
         return len(thing) == 0
     return False
 
-def resolveSymbols(job, commands, config, stepConfig):
+def resolveSymbols(job, context, commands, stepSymbols):
     
     if _isEmpty(commands):
         return (None, None)
@@ -263,30 +263,29 @@ def resolveSymbols(job, commands, config, stepConfig):
     processedCommands = []
     outFiles = []
     for cmd in commands:
-        (processedCommand, fs) = resolveString(job, cmd, config, stepConfig)
+        (processedCommand, fs) = resolveString(job, context, cmd, stepSymbols)
         processedCommands.append(processedCommand)
         outFiles = outFiles + fs
         
     return (processedCommands, outFiles)
 
-def resolveString(job, cmd, config, stepConfig):
+def resolveString(job, context, cmd, stepSymbols):
 
-    knownFiles = job.context.knownFiles
-    stepSymbols = stepConfig.symbols()
+    knownFiles = context.knownFiles
     
-    cmd = evaluate(job, cmd, [config, stepSymbols, knownFiles.values()])
+    cmd = evaluate(job, context, cmd, [stepSymbols, knownFiles.values()])
 
     outputFiles = []
     if stepSymbols is not None:
-        for symbol in stepConfig.symbols():
+        for symbol in stepSymbols:
             if type(symbol) is Output:
                 outputFiles.append(symbol.pipeLineFile())
             
             
     return (cmd, outputFiles)
 
-def findOutputFile(job, name):
-    o = job.context.knownFiles[name]
-    if o is None:
-        return None
-    return o.pipeLineFile()
+def findOutputFile(context, name):
+    if name in context.knownFiles:
+        o = context.knownFiles[name]
+        return o.pipeLineFile()
+    return None

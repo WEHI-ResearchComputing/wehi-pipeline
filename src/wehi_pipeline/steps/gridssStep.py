@@ -7,7 +7,7 @@ from wehi_pipeline.steps.jobStep import ConfigJobStep
 from wehi_pipeline.config.symbols import resolveSymbols
 from wehi_pipeline.toil_support.utils import execute
 
-GRIDSS = 'gridss'
+GRIDSS = '/home/thomas.e/mnWork/gridss-1.2.4-jar-with-dependencies.jar'
 NP_THREADS = 8
 
 class Gridss(ConfigJobStep):
@@ -23,17 +23,22 @@ class Gridss(ConfigJobStep):
         super(Gridss, self).__init__(config)
 
     def function(self):
-        def f(job):
+        def f(job, context):
     
-            cmd = GRIDSS + ' au.edu.wehi.idsv.Idsv' + \
+            ram = 8 + 2 * NP_THREADS
+            ram = '-Xmx' + str(ram) + 'g'
+
+            cmd = 'java -ea ' + ram + ' -jar ' + GRIDSS + ' gridds.CallVariants' + \
                 ' TMP_DIR=$temp-dir' + \
-                ' REFERENCE=$ref' + \
+                ' REFERENCE=$hg38' + \
                 ' INPUT=$sorted IC=1' + \
                 ' OUTPUT=$vcf' + \
                 ' THREADS=' + str(NP_THREADS)
             
-            (cmd, outputFiles) = resolveSymbols(job, cmd, self.symbols(), self)
+            (cmd, outputFiles) = resolveSymbols(job, context, cmd, self.symbols())
             
-            execute(job, cmd, outputFiles)
+            execute(context, cmd, outputFiles, modules=self.modules())
+            
+            return context
     
         return f

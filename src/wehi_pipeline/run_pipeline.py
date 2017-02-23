@@ -5,12 +5,10 @@ Created on 6Feb.,2017
 '''
 from wehi_pipeline.steps.jobStep import wehiWrapper
 
-# HOST = '10.1.17.158'
-# import pydevd
-
 import argparse
 import os
 import sys
+import dill
 
 from toil.common import Toil
 from toil.job import Job
@@ -32,41 +30,35 @@ def getOptions():
     options.disableCaching = True
     
     return options
-        
+
 def makeLaunchJob(config):
-        
+    
     fqs = config.fastqs()
     if len(fqs) == 0:
-        logging.info('No input files')
+        print('No input files')
         return None
  
     contexts = []
     for fq in fqs:
-        contexts.append(WorkflowContext(fq.forward(), fq.backward(), fq.sample(), TMPBASE, None))
+        cxt = WorkflowContext(fq.forward(), fq.backward(), fq.sample(), TMPBASE, config.symbols())
+        cxt = dill.dumps(cxt)
+        contexts.append(cxt)
 
-    mj = Job()
     firstStep = config.steps()[0]
     
+    mj = Job()
     for context in contexts:
-        nj = mj.addChildJobFn(wehiWrapper, step=firstStep)
-        nj.context = context
+        mj.addChildJobFn(wehiWrapper, step=firstStep, context=context)
         
     return mj
 
 def main():
-#     pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
         
     options = getOptions()
     
     configFile = options.config
     config = Config(configFile)
     
-    if not config.isValid():
-        print('Configuration is not valid:')
-        print config.validationErrors()[0]
-        sys.exit(1)
-        
-
     mj = makeLaunchJob(config)
     if mj is None:
         return

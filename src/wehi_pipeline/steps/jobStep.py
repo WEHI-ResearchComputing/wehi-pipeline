@@ -7,10 +7,12 @@ Created on 14Feb.,2017
 from wehi_pipeline.toil_support.utils import asList
 from wehi_pipeline.config.symbols import Output
 import logging
+import dill
 
 class ConfigJobStep(object):
 
     def __init__(self, config):
+#         self._stepType = config.keys()[0]
         self._config = config
         self._name = self._config['name']
         
@@ -41,22 +43,31 @@ class ConfigJobStep(object):
         self._nextStep = step
         
     def nextStep(self):
-        return self._config['next-step'] if 'next-step' in self._config else None
-        
-def wehiWrapper(job, step=None):
-    HOST = '10.1.17.64'
-    import pydevd
-    pydevd.settrace(HOST, stdoutToServer=True, stderrToServer=True, suspend=False)
-
-    step.function()(job)
+        return self._nextStep
     
+    def config(self):
+        return {self._stepType: self._config}
+    
+    def modules(self):
+        return self._modules
+        
+def wehiWrapper(job, step=None, context=None):
+
+    # Need to serialise and deserialise the context because cPickle can't
+    context = dill.loads(context)
+    
+    logging.info('Starting step:' + step.name())
+    context = step.function()(job, context)
     logging.info('Finished step:' + step.name())
 
     nextStep = step.nextStep()
     if nextStep == None:
         return
-    
+     
     logging.info('Launching step: ' + nextStep.name())
     
-    nj = job.addChildJobFn(wehiWrapper, step=nextStep)
-    nj.context = job.context
+    dillContext = dill.dumps(context)
+    
+    job.addChildJobFn(wehiWrapper, step=nextStep, context=dillContext)
+    
+    

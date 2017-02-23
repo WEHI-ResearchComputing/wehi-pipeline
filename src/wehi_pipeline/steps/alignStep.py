@@ -22,21 +22,26 @@ class Align(ConfigJobStep):
         config['outputs'] = [
             {
             'name' :  'aligned',
-            'destination' : '$temp-dir',
+            'destination' : '$temp-dir'
             }
                    ]
+        
+        self._reference = config['reference']
         
         super(Align, self).__init__(config)
         
     def function(self):
-        def f(job):
+        def f(job, context):
             
-            cmd = BWA + ' mem -t ' + str(NP_THREADS) + ' $ref $forward $backward'
-            (cmd, outputFiles) = resolveSymbols(job, cmd, self.symbols(), self)
+            cmd = BWA + ' mem -t ' + str(NP_THREADS) + ' ' + self._reference + ' $forward $backward'
+            (cmd, outputFiles) = resolveSymbols(job, context, cmd, self.symbols())
             
-            alignedFile = findOutputFile(job, 'aligned')
+            alignedFile = findOutputFile(context, 'aligned')
             
-            execute(job, cmd, outputFiles, outfn=alignedFile.path()) 
+            cmd = 'touch ' + alignedFile.path()
+            execute(context, cmd, outputFiles, outfn=alignedFile.path(), modules=self.modules())
+            
+            return context
             
         return f
             

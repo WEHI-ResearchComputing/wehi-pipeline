@@ -27,7 +27,7 @@ class DummyFile(ConfigJobStep):
             if self._content is not None:
                 strings.append(self._content)
                 
-            (strings, _) = resolveSymbols(job, strings, None, self)
+            (strings, _) = resolveSymbols(job, strings, self.symbols())
             
             if self._content == None:
                 cmd = 'touch ' + strings[0]
