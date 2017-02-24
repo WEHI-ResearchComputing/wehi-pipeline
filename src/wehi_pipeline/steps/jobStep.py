@@ -12,7 +12,6 @@ import dill
 class ConfigJobStep(object):
 
     def __init__(self, config):
-#         self._stepType = config.keys()[0]
         self._config = config
         self._name = self._config['name']
         
@@ -53,7 +52,8 @@ class ConfigJobStep(object):
         
 def wehiWrapper(job, step=None, context=None):
 
-    # Need to serialise and deserialise the context because cPickle can't
+    # Need to serialise and deserialise ourselves 
+    # otherwise cPickle chokes
     context = dill.loads(context)
     
     logging.info('Starting step:' + step.name())

@@ -16,6 +16,7 @@ import logging
 
 from wehi_pipeline.config.config import Config
 from wehi_pipeline.toil_support.context import WorkflowContext
+from wehi_pipeline.toil_support.utils import registerDrmaaBatchSystem
 
 TMPBASE = os.path.join(os.getenv('HOME'), 'tmp')
 
@@ -53,7 +54,8 @@ def makeLaunchJob(config):
     return mj
 
 def main():
-        
+    registerDrmaaBatchSystem()
+    
     options = getOptions()
     
     configFile = options.config
