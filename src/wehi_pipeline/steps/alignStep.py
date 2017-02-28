@@ -38,7 +38,6 @@ class Align(ConfigJobStep):
             
             alignedFile = findOutputFile(context, 'aligned')
             
-            cmd = 'touch ' + alignedFile.path()
             execute(context, cmd, outputFiles, outfn=alignedFile.path(), modules=self.modules())
             
             return context

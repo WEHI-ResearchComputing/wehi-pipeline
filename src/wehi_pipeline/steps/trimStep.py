@@ -60,9 +60,6 @@ class Trim(ConfigJobStep):
             
             cmd = cmd[0] + ' -baseout ' + baseOut + ' ' + adaptors
             
-            bnOutput = findOutputFile(context, 'trimmed-forward')
-            cmd = 'touch ' + anOutput.path() + ' ' + bnOutput.path()
-            
             execute(context, cmd, outputFiles, modules=['trimmomatic'])
             
             return context
