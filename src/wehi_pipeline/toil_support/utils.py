@@ -48,6 +48,8 @@ def registerDrmaaBatchSystem():
     def addOptions(addOptionFn):
         addOptionFn("--jobQueue", dest="jobQueue", default=None,
                 help=("A job queue (used by the DRMAA batch system)"))
+        addOptionFn("--jobNamePrefix", dest="jobNamePrefix", default='toil',
+                help=("A job name prefix (will be concatenated with the first part of the Toil workflowID, used by the DRMAA batch system)"))
         
     addOptionsDefinition(addOptions)
     
@@ -94,10 +96,10 @@ def execute(context, cmds, pipeLineFiles, outfn=None, infn=None, modules=None):
         try:
             osExecutor(cmds, outfh, infh, modules)
         except Exception as exc:
-                closeStream(outfh)            
-                closeStream(infh)
-                traceback.print_exc()
-                raise exc
+            closeStream(outfh)            
+            closeStream(infh)
+            traceback.print_exc()
+            raise exc
             
     for pf in pipeLineFiles:
         pf.commit()

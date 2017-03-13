@@ -48,6 +48,7 @@ class DrmaaWorker(Thread):
         self.drmaaJobIDs = dict()
         self.workDir = config.workDir
         
+        
         if config.environment:
             self.environment = {}
             for k, v in config.environment.iteritems():
@@ -57,8 +58,12 @@ class DrmaaWorker(Thread):
                 self.environment = None
         else:
             self.environment = None
+
+        wid = config.workflowID.split('-')[0]
+        self.id = config.jobNamePrefix + '-' + wid
+        
+        self.jobQueue = config.jobQueue
                 
-        self.jobQueue = config.jobQueue        
         s=drmaa.Session()
         s.initialize()
         self.drmaaSession = s
@@ -183,7 +188,8 @@ class DrmaaWorker(Thread):
         jt.workingDirectory = self.workDir
         jt.remoteCommand = command
         jt.outputPath = self.workDir
-
+        jt.jobName = self.id
+        
         if self.environment is not None:
             jt.jobEnvironment = self.environment
             
@@ -358,6 +364,7 @@ class DrmaaBatchSystem(BatchSystemSupport):
 
     @classmethod
     def setOptions(cls, setOption):
+        setOption("jobNamePrefix")
         setOption("jobQueue")
 
         
