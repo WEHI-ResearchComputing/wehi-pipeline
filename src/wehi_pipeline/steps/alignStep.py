@@ -30,10 +30,15 @@ class Align(ConfigJobStep):
         
         super(Align, self).__init__(config)
         
+    def numRecommendedThreads(self):
+        return NP_THREADS
+        
     def function(self):
         def f(job, context):
             
-            cmd = BWA + ' mem -t ' + str(NP_THREADS) + ' ' + self._reference + ' $forward $backward'
+            numThreads = str(self.numRecommendedThreads())
+            
+            cmd = BWA + ' mem -t ' + numThreads + ' ' + self._reference + ' $forward $backward'
             (cmd, outputFiles) = resolveSymbols(job, context, cmd, self.symbols())
             
             alignedFile = findOutputFile(context, 'aligned')

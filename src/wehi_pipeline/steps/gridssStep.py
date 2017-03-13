@@ -34,11 +34,19 @@ class Gridss(ConfigJobStep):
 
         if not vcfOutputFound or not assemblyOutputFound:
             raise ConfigException('A vcf and assembly output must be provided.')
-
+        
+    def numRecommendedThreads(self):
+        return NP_THREADS
+    
+    def recommendedMemory(self):
+        return 8 + 2 * NP_THREADS
+    
     def function(self):
         def f(job, context):
     
-            ram = 8 + 2 * NP_THREADS
+            ram = str(self.recommendedMemory())
+            numThreads = str(self.numRecommendedThreads())
+            
             ram = '-Xmx' + str(ram) + 'g'
 
             cmd = 'java -ea ' + ram + \
@@ -54,7 +62,7 @@ class Gridss(ConfigJobStep):
                 ' ASSEMBLY=$assembly' + \
                 ' INPUT=$sorted IC=1' + \
                 ' OUTPUT=$vcf' + \
-                ' THREADS=' + str(NP_THREADS)
+                ' THREADS=' + numThreads
             
             (cmd, outputFiles) = resolveSymbols(job, context, cmd, self.symbols())
             

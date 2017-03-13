@@ -38,6 +38,12 @@ class ConfigJobStep(object):
     def function(self):
         raise Exception('function is not implemented.')
     
+    def numRecommendedThreads(self):
+        raise Exception('function is not implemented.')
+    
+    def recommendedMemory(self):
+        raise Exception('function is not implemented.')
+    
     def setNextStep(self, step):
         self._nextStep = step
         
@@ -51,7 +57,6 @@ class ConfigJobStep(object):
         return self._modules
         
 def wehiWrapper(job, step=None, context=None):
-
     # Need to serialise and deserialise ourselves 
     # otherwise cPickle chokes
     context = dill.loads(context)
