@@ -90,13 +90,25 @@ class PipeLineFile(object):
         self.fileName = fileName
         self.destDir = destDir
         self.shareWith = shareDirectoryWith
+        self._committed = False
+        
+        if hasattr(job, 'fileStore'):
+            self._fs = job.fileStore
+        else:
+            self._fs = None
+            
+    def _tempDir(self):
+        if self._fs is None:
+            return '.'
+        else:
+            return self._fs.getLocalTempDir()
         
     def create(self):
         if self.fileName is None:
-            self._path =  self.job.fileStore.getLocalTempFile()
+            self._path =  self._fs.getLocalTempFile()
         else:
             if self.shareWith is None:
-                outdir = self.job.fileStore.getLocalTempDir()
+                outdir = self._tempDir()
             else:
                 outdir = self.shareWith.dir()
             self._path = os.path.join(outdir, self.fileName)
@@ -109,11 +121,11 @@ class PipeLineFile(object):
         fid = files[self.fileKey]
         
         if self.fileName is None:
-            self._path = self.job.fileStore.readGlobalFile(fid)
+            self._path = self._fs.readGlobalFile(fid)
         else:
-            outDir = self.job.fileStore.getLocalTempDir()
+            outDir = self._tempDir()
             self._path = os.path.join(outDir, self.fileName)
-            self.job.fileStore.readGlobalFile(fid, self._path)
+            self._fs.readGlobalFile(fid, self._path)
             
         return self._path
         
@@ -127,10 +139,15 @@ class PipeLineFile(object):
             return os.path.dirname(self._path)
 
     def commit(self):
+        if self._committed:
+            return
+        
         if self.fileKey is None:
             self._commitToDestination()
         else:
             self._commitToFileStore()
+            
+        self._committed = True
             
     def _commitToDestination(self):
         fileName = self.fileName
@@ -150,13 +167,13 @@ class PipeLineFile(object):
             
         if tgt is None:
             fn = os.path.basename(self._path)
-            tgt = os.path.join(self._path, fn)
+            tgt = os.path.join(self.destDir, fn)
 
         if os.path.exists(tgt):
             os.remove(tgt)
             
         shutil.move(self._path, self.destDir)
-        
+        self._path = tgt
             
         _logCommittedFileDetails(tgt, None, None)
         
@@ -212,12 +229,19 @@ class PipeLineBAMFile(object):
         self.fileKey = fileKey
         self.fileName = fileName
         self.destDir = destDir
+        if hasattr(job, 'fileStore'):
+            self._fs = job.fileStore
+        else:
+            self._fs = None
         
     def create(self):
         filename = 'output' if self.fileName is None else self.fileName
-        outDir = self.job.fileStore.getLocalTempDir()
-        self.bamPath = os.path.join(outDir, filename + '.bam')
-        self.baiPath = os.path.join(outDir, filename + '.bai')
+        if self._fs is None:
+            self.bamPath = None
+        else:
+            outDir = self._fs.getLocalTempDir()
+            self.bamPath = os.path.join(outDir, filename + '.bam')
+            self.baiPath = os.path.join(outDir, filename + '.bai')
         
         return self.bamPath
             
@@ -231,12 +255,15 @@ class PipeLineBAMFile(object):
         
         (BAMFID, BAIFID) = files[self.fileKey]
         
-        outDir = self.job.fileStore.getLocalTempDir()
-        self.baiPath = os.path.join(outDir, filename + '.bai')
-        self.bamPath = os.path.join(outDir, filename + '.bam')
+        if self._fs is not None:
+            outDir = self._fs.getLocalTempDir()
+            self.baiPath = os.path.join(outDir, filename + '.bai')
+            self.bamPath = os.path.join(outDir, filename + '.bam')
         
-        self.job.fileStore.readGlobalFile(BAIFID, self.baiPath)
-        self.job.fileStore.readGlobalFile(BAMFID, self.bamPath)
+            self._fs.readGlobalFile(BAIFID, self.baiPath)
+            self._fs.readGlobalFile(BAMFID, self.bamPath)
+        else:
+            self.bamPath = None
                     
         return self.bamPath
         

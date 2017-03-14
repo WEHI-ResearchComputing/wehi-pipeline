@@ -12,15 +12,14 @@ class WorkflowContext(object):
     This class transports context information between steps of an individual workflow
     '''
 
-
-    def __init__(self, forward, backward, identifier, tmpBase, steps):
+    def __init__(self, forward, backward, identifier, tmpBase, symbols):
         self.forward = forward
         self.backward = backward
         self.identifier = identifier
         self.tmpBase = tmpBase
         self.touchOnly = False
-        self.steps = steps
-        self.files = dict()
+        self.knownFiles = {}
+        self.runSymbols = symbols
         
     def setTouchOnly(self, touchOnly):
         self.touchOnly = touchOnly
@@ -31,4 +30,10 @@ class WorkflowContext(object):
     def getTempDir(self):
         p = os.path.join(self.tmpBase, self.identifier)
         makedir(p)
-        return p;
+        return p
+
+    def copy(self):
+        c = WorkflowContext(self.forward, self.backward, self.identifier, self.tmpBase, self.runSymbols)
+        c.setTouchOnly(self.touchOnly)
+        c.knownFiles = self.knownFiles.copy()
+        return c
