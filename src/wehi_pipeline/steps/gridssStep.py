@@ -8,7 +8,7 @@ from wehi_pipeline.config.symbols import resolveSymbols
 from wehi_pipeline.toil_support.utils import execute
 from wehi_pipeline.config import ConfigException
 
-GRIDSS = '/home/thomas.e/mnWork/gridss-1.2.4-jar-with-dependencies.jar'
+GRIDSS = '/home/thomas.e/mnWork/gridss-1.3.2-jar-with-dependencies.jar'
 NP_THREADS = 8
 
 class Gridss(ConfigJobStep):
@@ -19,7 +19,7 @@ class Gridss(ConfigJobStep):
         if 'name' not in config:
             config['name'] = 'trim'
             
-        config['modules'] = [GRIDSS]
+        config['modules'] = ['R']
         
         super(Gridss, self).__init__(config)
         
@@ -60,7 +60,7 @@ class Gridss(ConfigJobStep):
                 ' WORKING_DIR=$temp-dir' + \
                 ' REFERENCE_SEQUENCE=$hg38' + \
                 ' ASSEMBLY=$assembly' + \
-                ' INPUT=$sorted IC=1' + \
+                ' INPUT=$sorted' + \
                 ' OUTPUT=$vcf' + \
                 ' THREADS=' + numThreads
             
