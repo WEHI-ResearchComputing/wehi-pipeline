@@ -5,9 +5,6 @@ Created on 24Aug.,2017
 '''
 
 import sys
-import re
-from toil.cwl.cwltoil import main
-
 
 def registerDrmaaBatchSystem():
     from toil.batchSystems.registry import addBatchSystemFactory
@@ -29,7 +26,6 @@ DRMAA batch system)"))
     addOptionsDefinition(addOptions)
 
 
-if __name__ == '__main__':
+def main(args=None, stdout=sys.stdout):
     registerDrmaaBatchSystem()
-    sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-    sys.exit(main())
+    sys.exit(toil.cwl.cwltoil.main(args, stdout))
