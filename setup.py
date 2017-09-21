@@ -1,4 +1,5 @@
 from distutils.core import setup
+from setuptools import find_packages
 
 setup(
     name='wehi-pipeline',
@@ -9,7 +10,6 @@ setup(
     author='Evan Thomas',
     author_email='thomas.e@wehi.edu.au',
     description='Wrappers and utilities to run CWL/Toil pipelines on WEHI infrastructure',
-    package_dir={'': 'src'},
-    entry_points={
-            'console_scripts': ['cwlwehi = wehi_pipeline.cwlwehi:main']}
+    packages=find_packages(where='src'),
+    entry_points={'console_scripts': ['cwlwehi = wehi_pipeline.cwlwehi:main']}
 )
