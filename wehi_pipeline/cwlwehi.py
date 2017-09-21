@@ -5,6 +5,7 @@ Created on 24Aug.,2017
 '''
 
 import sys
+import toil.cwl.cwltoil
 
 def registerDrmaaBatchSystem():
     from toil.batchSystems.registry import addBatchSystemFactory

@@ -198,6 +198,7 @@ class DrmaaWorker(Thread):
                 memory = memory/2**30
                 cpu = int(round(cpu)) # Gets passed as float
                 jt.nativeSpecification = '-l nodes=1:ppn=' + str(cpu) + ',mem=' + str(memory) + 'gb -q ' + self.jobQueue
+                #jt.nativeSpecification = '-l nodes=1:ppn=4,mem=60gb -q ' + self.jobQueue
             except NameError:
                 # No job queue specified
                 pass
@@ -246,10 +247,6 @@ class DrmaaBatchSystem(BatchSystemSupport):
     Interface for DRMAA supported batch systems
     '''
     
-    @classmethod
-    def supportsWorkerCleanup(cls):
-        return False
-
     @classmethod
     def supportsHotDeployment(cls):
         return False
@@ -325,7 +322,7 @@ class DrmaaBatchSystem(BatchSystemSupport):
         return list(self.currentJobs)
     
     def getRunningBatchJobIDs(self):
-        return self.worker.getRunningJobIDs()
+        return {}
 
     def getUpdatedBatchJob(self, maxWait):
         try:
@@ -354,6 +351,9 @@ class DrmaaBatchSystem(BatchSystemSupport):
     def getRescueBatchJobFrequency(cls):
         return 30 * 60 # Half an hour
     
+    @classmethod
+    def supportsWorkerCleanup(cls):
+        return True
     
     @staticmethod
     def obtainSystemConstants():

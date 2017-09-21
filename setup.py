@@ -1,10 +1,9 @@
-from distutils.core import setup
-from setuptools import find_packages
+from setuptools import setup
 
 setup(
     name='wehi-pipeline',
     version='0.1',
-    packages=['wehi_pipeline', 'src.wehi_pipeline.batchSystems'],
+    packages=['wehi_pipeline', 'wehi_pipeline.batchSystems'],
     url='https://github.com/WEHI-ResearchComputing/wehi-pipeline',
     license='GPLv3',
     author='Evan Thomas',
