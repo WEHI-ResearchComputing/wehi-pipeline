@@ -47,23 +47,26 @@ class DrmaaWorker(Thread):
         self.allocatedCpus = dict()
         self.drmaaJobIDs = dict()
         self.workDir = config.workDir
-        
-        
+
+
+        # Copy existing environment - essential if running in a venv
+        self.environment = {}
+        for k, v in os.environ.iteritems():
+        	self.environment[k] = quote(v)
+
         if config.environment:
-            self.environment = {}
             for k, v in config.environment.iteritems():
                 quoted_value = quote(os.environ[k] if v is None else v)
                 self.environment[k] = quoted_value
-            if len(self.environment) == 0:
-                self.environment = None
-        else:
-            self.environment = None
+
+	    if len(self.environment) == 0:
+	        self.environment = None
 
         wid = config.workflowID.split('-')[0]
         self.id = config.jobNamePrefix + '-' + wid
-        
+
         self.jobQueue = config.jobQueue
-                
+
         s=drmaa.Session()
         s.initialize()
         self.drmaaSession = s
@@ -183,16 +186,16 @@ class DrmaaWorker(Thread):
 
     def submit(self, jobID, cpu, memory, command):
         session = self.drmaaSession
-        
+
         jt = session.createJobTemplate()
         jt.workingDirectory = self.workDir
         jt.remoteCommand = command
         jt.outputPath = self.workDir
         jt.jobName = self.id
-        
+
         if self.environment is not None:
             jt.jobEnvironment = self.environment
-            
+
         if session.drmsInfo == u'Torque':
             try:
                 memory = memory/2**30
@@ -202,9 +205,9 @@ class DrmaaWorker(Thread):
             except NameError:
                 # No job queue specified
                 pass
-        
+
         return session.runJob(jt)
-        
+
     def getJobExitCode(self, drmaaJobID):
         logger.debug("Getting exit code for drmaa job %s", str(drmaaJobID))
         try:
@@ -213,19 +216,19 @@ class DrmaaWorker(Thread):
             except DrmCommunicationException as ex:
                 # Crappy torque implementation. Return None and try again later
                 logger.info('DrmCommunicationException: ' + str(ex))
-                return None    
-            
+                return None
+
             if info is None:
                 return None
-            
+
             if not info.hasExited:
                 return None
-            
+
             if info.hasSignal:
                 return info.terminatedSignal
-            
+
             return info.exitStatus
-        
+
         except drmaa.errors.ExitTimeoutException:
             return None
 
@@ -240,13 +243,13 @@ def __truncate__(f):
         fn = bits[1]
     h = open(fn, 'w')
     h.close()
-        
+
 
 class DrmaaBatchSystem(BatchSystemSupport):
     '''
     Interface for DRMAA supported batch systems
     '''
-    
+
     @classmethod
     def supportsHotDeployment(cls):
         return False
@@ -255,11 +258,11 @@ class DrmaaBatchSystem(BatchSystemSupport):
         super(DrmaaBatchSystem, self).__init__(config, maxCores, maxMemory, maxDisk)
 
         self.drmaaResultsFile = self._getResultsFileName(config.jobStore)
-        
+
         # Reset the job queue and results (initially, we do this again once we've killed the jobs)
         # We lose any previous state in this file, and ensure the files existence
         __truncate__(self.drmaaResultsFile)
-        
+
         self.currentJobs = set()
         self.maxCPU, self.maxMEM = self.obtainSystemConstants()
         self.nextJobID = 0
@@ -267,15 +270,15 @@ class DrmaaBatchSystem(BatchSystemSupport):
         self.updatedJobsQueue = Queue()
         self.killQueue = Queue()
         self.killedJobsQueue = Queue()
-        self.worker = DrmaaWorker(self.newJobsQueue, 
-                                  self.updatedJobsQueue, 
+        self.worker = DrmaaWorker(self.newJobsQueue,
+                                  self.updatedJobsQueue,
                                   self.killQueue,
                                   self.killedJobsQueue,
                                   config,
                                   self)
-        
+
         self.worker.start()
-        
+
     def __des__(self):
         try:
             # Closes the file handle associated with the results file.
@@ -291,8 +294,8 @@ class DrmaaBatchSystem(BatchSystemSupport):
         self.newJobsQueue.put((jobID, jobNode.cores, jobNode.memory, jobNode.command))
         logger.debug("Issued the job command: %s with job id: %s ", jobNode.command, str(jobID))
         return jobID
-    
-    
+
+
     def killBatchJobs(self, jobIDs):
         """
         Kills the given jobs, represented as Job ids, then checks they are dead by checking
@@ -314,13 +317,13 @@ class DrmaaBatchSystem(BatchSystemSupport):
                              QUEUE_POLL_TIME)
                 time.sleep(QUEUE_POLL_TIME)
 
-    
+
     def getIssuedBatchJobIDs(self):
         """
         Gets the list of jobs issued to drmaa.
         """
         return list(self.currentJobs)
-    
+
     def getRunningBatchJobIDs(self):
         return {}
 
@@ -350,11 +353,11 @@ class DrmaaBatchSystem(BatchSystemSupport):
     @classmethod
     def getRescueBatchJobFrequency(cls):
         return 30 * 60 # Half an hour
-    
+
     @classmethod
     def supportsWorkerCleanup(cls):
         return True
-    
+
     @staticmethod
     def obtainSystemConstants():
         '''
@@ -367,5 +370,5 @@ class DrmaaBatchSystem(BatchSystemSupport):
         setOption("jobNamePrefix")
         setOption("jobQueue")
 
-        
-        
+
+
