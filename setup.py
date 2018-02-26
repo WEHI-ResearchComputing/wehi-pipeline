@@ -10,7 +10,6 @@ setup(
     author_email='thomas.e@wehi.edu.au',
     description='Wrappers and utilities to run CWL/Toil pipelines on WEHI infrastructure',
     install_requires=[
-    	'toil',
     	'toil[cwl]',
     	'drmaa',
     	'html5lib',
