@@ -12,7 +12,6 @@ setup(
     install_requires=[
     	'toil',
     	'toil[cwl]',
-    	'cwltool',
     	'drmaa',
     	'html5lib',
     ],
