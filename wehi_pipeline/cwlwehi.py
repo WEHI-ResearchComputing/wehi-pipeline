@@ -17,7 +17,7 @@ def registerDrmaaBatchSystem():
 
     addBatchSystemFactory('drmaa', drmaaBatchSystemFactory)
 
-    def addOptions(addOptionFn):
+    def addOptions(addOptionFn, dummy):
         addOptionFn("--jobQueue", dest="jobQueue", default=None,
                     help=("A job queue (used by the DRMAA batch system)"))
         addOptionFn("--jobNamePrefix", dest="jobNamePrefix", default='toil',

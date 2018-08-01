@@ -257,11 +257,11 @@ class DrmaaBatchSystem(BatchSystemSupport):
     def __init__(self, config, maxCores, maxMemory, maxDisk):
         super(DrmaaBatchSystem, self).__init__(config, maxCores, maxMemory, maxDisk)
 
-        self.drmaaResultsFile = self._getResultsFileName(config.jobStore)
+        # self.drmaaResultsFile = self._getResultsFileName(config.jobStore)
 
         # Reset the job queue and results (initially, we do this again once we've killed the jobs)
         # We lose any previous state in this file, and ensure the files existence
-        __truncate__(self.drmaaResultsFile)
+        # __truncate__(self.drmaaResultsFile)
 
         self.currentJobs = set()
         self.maxCPU, self.maxMEM = self.obtainSystemConstants()
@@ -282,7 +282,8 @@ class DrmaaBatchSystem(BatchSystemSupport):
     def __des__(self):
         try:
             # Closes the file handle associated with the results file.
-            self.drmaaResultsFileHandle.close()
+            # self.drmaaResultsFileHandle.close()
+            pass
         except:
             pass
 
@@ -357,6 +358,10 @@ class DrmaaBatchSystem(BatchSystemSupport):
     @classmethod
     def supportsWorkerCleanup(cls):
         return True
+
+    @classmethod
+    def supportsAutoDeployment(cls):
+        return False
 
     @staticmethod
     def obtainSystemConstants():
